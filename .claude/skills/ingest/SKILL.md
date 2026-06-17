@@ -6,7 +6,7 @@ user_invocable: true
 
 # Ingest Skill
 
-Brings new content into the knowledge base. Supports YouTube videos, web URLs, and existing raw files.
+Scaffolds and fills in content from external sources. Ingest means the full pipeline: fetch → validate → scaffold → write Summary and Analysis → lint. A file is not ingested until the judgment sections are filled.
 
 ## Usage
 
