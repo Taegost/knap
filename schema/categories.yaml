@@ -1,0 +1,39 @@
+# Schema: categories and required fields
+# Each repo extends this with its own domain categories.
+
+# Required fields on every raw file
+required_fields:
+  - title
+  - source_url
+  - date_farmed
+  - category
+
+# Optional fields on any raw file
+optional_fields:
+  - website
+  - address
+  - phone
+  - hours
+  - email
+
+# Category definitions
+# Each category specifies:
+#   required_fields: fields that must be present (beyond the global required)
+#   analysis_label: heading for the judgment section in wiki pages
+#   analysis_todo: placeholder text for the analysis section
+
+categories:
+  transcript:
+    required_fields: [channel, format]
+    analysis_label: "Key Takeaways"
+    analysis_todo: "main ideas, actionable insights, relevance to our work"
+
+  research:
+    required_fields: [description]
+    analysis_label: "Analysis"
+    analysis_todo: "findings, implications, open questions"
+
+  reference:
+    required_fields: [description]
+    analysis_label: "Notes"
+    analysis_todo: "key facts, how this applies, cross-references"

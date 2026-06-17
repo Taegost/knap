@@ -1,0 +1,11 @@
+# Corrections index
+# Known-wrong terms mapped to correct versions.
+# Checked by scripts before commit.
+# Format:
+#   - wrong: "incorrect term"
+#     correct: "correct term"
+#     context: "why the original was wrong"
+#     source: "where the correction was found"
+#     added: YYYY-MM-DD
+
+[]
