@@ -1,6 +1,6 @@
 # Knap
 
-Memory framework for LLM-powered knowledge management.
+Framework for LLM-powered knowledge management and self-improvement. Memory retains what you learn. Self-improvement makes the system better with every use.
 
 ## Non-Negotiables
 

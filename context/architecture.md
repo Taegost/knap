@@ -1,6 +1,10 @@
 # Architecture
 
-Knap is a generic, extensible memory framework for LLM-powered knowledge management. It blends mex-style routing (small anchor + router + context files) with a Karpathy-style raw-to-wiki pipeline (immutable sources → LLM-maintained pages).
+Knap is a generic, extensible framework for LLM-powered knowledge management and self-improvement. It blends mex-style routing (small anchor + router + context files) with a Karpathy-style raw-to-wiki pipeline (immutable sources → LLM-maintained pages).
+
+Two pillars:
+- **Memory** — retains knowledge across sessions (raw sources → wiki pages → index)
+- **Self-improvement** — skills, scripts, and conventions get better with every use (GROW loop, feedback capture, script-first automation)
 
 ## Design Principles
 

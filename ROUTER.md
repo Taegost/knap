@@ -19,4 +19,4 @@ Read CLAUDE.md first. Then identify your task type below and load only the files
 <!-- Updated by GROW loop or manually -->
 Last updated: 2026-06-17
 
-Knap is an early-stage memory framework. Core architecture is in place: raw/wiki/schema structure, routing, transcript fetcher. Ingest and synthesize skills are being built. No content ingested yet.
+Knap is an early-stage framework for memory and self-improvement. Core architecture is in place: raw/wiki/schema structure, routing, transcript fetcher, ingest and synthesize skills. Two transcripts ingested. Self-improvement loop not yet built.
