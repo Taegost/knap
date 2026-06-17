@@ -25,26 +25,41 @@ Austin Marchese presents four Claude Code projects that build on each other: a b
 Prompts shown on screen during the video (timestamps noted). Verbatim text below — use these as-is or adapt.
 
 **P1 — Interview me (Project 1, ~0:11)**
-<!-- TODO: paste verbatim prompt from video screenshot -->
+
+> Interview me to build a personal career coach. Ask me 10 questions one at a time covering: my current role, what I'm building toward, my  strengths, my blockers, and the people I trust for advice. After the back and forth, save it as md file in this directory and reference it to when it's needed.
+
 The interview prompt tells Claude to pull context from you instead of guessing. Covers goals for 1, 5, 10 years.
 
-**P2 — Skill identification (Project 2, ~3:20)**
-> "Based on our recent back-and-forth, what skill(s), script(s), and/or document(s) can be created or updated to improve the process, reduce errors, and improve repeatability. Bias towards scripts whenever possible"
+**P2 — Board of directors (Project 1, ~0:35)**
 
-**P3 — Improve system (Project 4, ~11:35)**
-After every output that needs correction, ask:
-> "Is this a one-time fix or should this be in the skill forever?"
-If forever, update the skill.
+> Based on what you learned about me, recommend 2 experts who'd make a phenomenal advisory board for my specific situation. Bias toward YouTube creators. For each: why they fit + their best 5 pieces of content I should ingest.
 
-**P4 — Review chat for improvements (Project 4, ~10:09)**
-> "Review the back and forth I just had after using this skill. Can we enhance the skill so this is handled automatically or we don't make the same mistake again?"
+Claude suggests board members based on your goals. Biasing toward YouTube creators ensures their full body of work is accessible as training data.
 
-**P5–P8 — Other on-screen prompts**
-<!-- TODO: paste verbatim prompts from video screenshots:
-  - Board member suggestion prompt (Step 2, ~0:37)
-  - Ingest YouTube data prompt (Step 3, ~1:12)
-  - Ask the board skill creation prompt (Step 4, ~1:24)
-  - Niche command center planning prompt (Step 2, ~4:41)
+**P3 — Ingest board member data (Project 1, ~1:11)**
+
+> Ingest the content I'm pasting below (transcripts, articles, posts, notes, whatever) as training data for [PERSON NAME] — save each piece as a raw file under knowledge/raw/[person-slug]/, then generate a synthesis wiki at knowledge/wiki/[person-slug].md covering their core ideas, vocabulary, stances, and recurring stories.
+
+Pipe-delimited ingestion: paste content, Claude saves raw files and generates synthesis wiki.
+
+**P4 — Ask the board skill (Project 1, ~1:35)**
+
+> In this project I have created a Board of Advisors. When I ask a question, give me each advisor's take in their own voice, flag where they agree and disagree, then synthesize what I should actually do. Create a custom skill called /ask-the-board which will automatically get their opinion on a decision I'm making.
+
+Creates a skill that consults all board members, finds consensus and disagreement, and synthesizes actionable advice.
+
+**P5 — What should I do with AI? (Project 1, ~1:49)**
+
+> Based on everything you know about me, what should I do to capitalize on AI?
+
+Example question to test the board. The board's value is in personalized advice grounded in your ingested context.
+
+**P6–P8 — Unverified (not yet reviewed)**
+<!-- These prompts are from earlier notes but have not been verified against the video past ~1:49.
+  - Improve system (Project 4, ~11:35): "Is this a one-time fix or should this be in the skill forever?"
+  - Review chat for improvements (Project 4, ~10:09): "Review the back and forth I just had after using this skill. Can we enhance the skill so this is handled automatically or we don't make the same mistake again?"
+  - Niche command center planning prompt (Project 2)
+  - Internal OS setup prompt (Project 4)
 -->
 
 ## Key Takeaways
