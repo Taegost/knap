@@ -37,3 +37,8 @@ categories:
     required_fields: [description]
     analysis_label: "Notes"
     analysis_todo: "key facts, how this applies, cross-references"
+
+  prompt:
+    required_fields: [description]
+    analysis_label: "Usage"
+    analysis_todo: "when to use, how to adapt, examples of output"
