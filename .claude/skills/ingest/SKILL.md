@@ -58,11 +58,12 @@ python scripts/ingest.py <raw-file>
 
 This creates the wiki stub, updates the index, and appends to the log.
 
-### 5. Write Summary and Analysis
+### 5. Write Summary, Analysis, and Prompts
 
 Read the raw source file and the generated wiki stub. Fill in:
 - **Summary** — 2-4 sentence synthesis of the content
 - **Analysis** — category-specific judgment section (see `schema/categories.yaml` for the label)
+- **Prompts** (for transcripts/videos) — extract all verbatim prompts mentioned or shown on screen. Use blockquotes (`>`) for exact text. Add `<!-- TODO -->` markers for prompts shown on screen but not captured in the transcript. These prompts are the most reusable artifacts — they should be copy-pasteable.
 
 ### 6. Lint
 

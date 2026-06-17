@@ -22,9 +22,30 @@ Austin Marchese presents four Claude Code projects that build on each other: a b
 
 ### Key Prompts
 
-- **Interview prompt** (Project 1): "Interview me about my goals" — Claude pulls context from you instead of guessing
-- **Skill identification** (Project 2): "Based on our recent back-and-forth, what skill(s), script(s), and/or document(s) can be created or updated to improve the process, reduce errors, and improve repeatability. Bias towards scripts whenever possible"
-- **Improve system** (Project 4): After every output that needs correction, ask "is this a one-time fix or should this be in the skill forever?" If forever, update the skill.
+Prompts shown on screen during the video (timestamps noted). Verbatim text below — use these as-is or adapt.
+
+**P1 — Interview me (Project 1, ~0:11)**
+<!-- TODO: paste verbatim prompt from video screenshot -->
+The interview prompt tells Claude to pull context from you instead of guessing. Covers goals for 1, 5, 10 years.
+
+**P2 — Skill identification (Project 2, ~3:20)**
+> "Based on our recent back-and-forth, what skill(s), script(s), and/or document(s) can be created or updated to improve the process, reduce errors, and improve repeatability. Bias towards scripts whenever possible"
+
+**P3 — Improve system (Project 4, ~11:35)**
+After every output that needs correction, ask:
+> "Is this a one-time fix or should this be in the skill forever?"
+If forever, update the skill.
+
+**P4 — Review chat for improvements (Project 4, ~10:09)**
+> "Review the back and forth I just had after using this skill. Can we enhance the skill so this is handled automatically or we don't make the same mistake again?"
+
+**P5–P8 — Other on-screen prompts**
+<!-- TODO: paste verbatim prompts from video screenshots:
+  - Board member suggestion prompt (Step 2, ~0:37)
+  - Ingest YouTube data prompt (Step 3, ~1:12)
+  - Ask the board skill creation prompt (Step 4, ~1:24)
+  - Niche command center planning prompt (Step 2, ~4:41)
+-->
 
 ## Key Takeaways
 

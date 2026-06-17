@@ -23,6 +23,26 @@ Austin Marchese distills four rules from how Anthropic engineers actually use Cl
 3. **Composable, not custom.** Small, focused, reusable skills that chain together. One monolithic skill becomes unmanageable. Benefits: issues are easy to spot, improvements compound, reuse instead of rebuilding.
 4. **Skills improve every session.** After every skill run, ask: "Is this a one-time fix or should this be in the skill forever?" If forever, update the skill. Chat history is the reference for improvement.
 
+### Key Prompts
+
+Prompts shown on screen during the video (timestamps noted). Verbatim text below — use these as-is or adapt.
+
+**P1 — Skill identification (~1:51)**
+<!-- TODO: paste verbatim prompt from video screenshot -->
+Helps identify which skills are worth creating based on your recent sessions.
+
+**P2 — Audit skill setup (~8:18)**
+<!-- TODO: paste verbatim prompt from video screenshot -->
+Audits your setup to make sure you're properly applying the three-layer pattern (description + instructions + tools).
+
+**P3 — Review chat for improvements (~10:09)**
+> "Review the back and forth I just had after using this skill. Can we enhance the skill so this is handled automatically or we don't make the same mistake again?"
+
+**P4 — The self-improvement question**
+After every skill run, ask:
+> "Is this a one-time fix or should this be in the skill forever?"
+If forever, update the skill. Add the rule, the example, the edge case.
+
 ### Key Patterns
 
 - **Save scripts inside skills.** Claude kept rewriting the same Python script every session. Saving it as a tool inside the skill made it deterministic, cheaper, and repeatable. "Trading AI tokens for code compute."
