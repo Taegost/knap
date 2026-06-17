@@ -28,17 +28,44 @@ Austin Marchese distills four rules from how Anthropic engineers actually use Cl
 Prompts shown on screen during the video (timestamps noted). Verbatim text below — use these as-is or adapt.
 
 **P1 — Skill identification (~1:51)**
-<!-- TODO: paste verbatim prompt from video screenshot -->
+
+> Based on my recent sessions, what tasks am I doing repeatedly that should be skills instead of one-off prompts?
+> For each one, suggest a skill name and what context it would need.
+
 Helps identify which skills are worth creating based on your recent sessions.
 
-**P2 — Audit skill setup (~8:18)**
-<!-- TODO: paste verbatim prompt from video screenshot -->
+**P2 — Build skills with verification (~4:24)**
+
+> Find a task where I'm doing manual checking, lookup, or verification after AI gives me an output.
+> Build a skill that does both: generates the answer AND verifies it.
+> Show me the SKILL.md with description, when-to-trigger examples, and the verification step.
+> Identify any tools that are needed to help this skill provide a better output.
+
+Forces the skill to include a verification layer instead of relying on the user to manually check outputs.
+
+**P3 — Audit skill setup (~8:18)**
+
+> Audit my Claude Skills for:
+> 1. Visibility:
+>    - Skills with high risk side effects (deploy, commit, send messages): add disable-model-invocation: true so Claude can't auto-fire.
+>    - Skills that are pure background knowledge users would never /run themselves: add user-invocable: false to hide from /menu.
+> 
+> 2. Deterministic vs non-deterministic:
+>    - Find any step inside a skill where AI is interpreting something that's actually a fixed, repeatable operation.
+>    - Suggest replacing those steps with a script saved inside the skill folder. Code = same result every time, no tokencost.
+>    - Keep AI for the steps that need judgment.
+> 
+> 3. Composability:
+>    - Flag any skill that duplicates logic another skill already has. Suggest extracting shared logic into a callable script or a smaller > composable skill.
+> 
+> Show me the rewrites with a changelog of what changed and why.
+
 Audits your setup to make sure you're properly applying the three-layer pattern (description + instructions + tools).
 
-**P3 — Review chat for improvements (~10:09)**
+**P4 — Review chat for improvements (~10:09)**
 > "Review the back and forth I just had after using this skill. Can we enhance the skill so this is handled automatically or we don't make the same mistake again?"
 
-**P4 — The self-improvement question**
+**P5 — The self-improvement question**
 After every skill run, ask:
 > "Is this a one-time fix or should this be in the skill forever?"
 If forever, update the skill. Add the rule, the example, the edge case.
