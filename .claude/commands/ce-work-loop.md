@@ -1,0 +1,1 @@
+Run /ce-work $ARGUMENTS. When it finishes, run /ce-knap-verify-implementation. If /ce-knap-verify-implementation reports PARTIAL or FAIL, run /ce-work $ARGUMENTS again to address them, then run /ce-knap-verify-implementation again. Continue this cycle until /ce-knap-verify-implementation reports PASS, then stop and summarize what was done.
