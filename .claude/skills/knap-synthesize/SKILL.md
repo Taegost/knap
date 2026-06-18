@@ -58,7 +58,7 @@ Do NOT ask whether to record. Synthesized answers MUST be recorded.
 
 ### 4. Update router state
 
-If the research changed what we know about the project, update `ROUTER.md`'s Current Project State section.
+If the research changed what we know about the project, update `.knap/ROUTER.md`'s Current Project State section.
 
 ## When NOT to synthesize
 

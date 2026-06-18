@@ -9,7 +9,7 @@
 
 ## YAML Frontmatter
 
-Every raw and wiki file has YAML frontmatter. Required fields are defined in `schema/categories.yaml`.
+Every raw and wiki file has YAML frontmatter. Required fields are defined in `.knap/schema/categories.yaml`.
 
 ```yaml
 ---

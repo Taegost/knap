@@ -9,7 +9,7 @@ Checks:
   5. Frontmatter validation
 
 Usage:
-    python3 scripts/lint.py
+    python3 .knap/scripts/lint.py
 """
 
 import re

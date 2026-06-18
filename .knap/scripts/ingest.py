@@ -6,9 +6,9 @@ and appends to wiki/log.md. Category-agnostic — derives paths from
 frontmatter and location.
 
 Usage:
-    python3 scripts/ingest.py raw/transcripts/*.md
-    python3 scripts/ingest.py --dry-run raw/transcripts/*.md
-    python3 scripts/ingest.py --force raw/transcripts/*.md
+    python3 .knap/scripts/ingest.py raw/transcripts/*.md
+    python3 .knap/scripts/ingest.py --dry-run raw/transcripts/*.md
+    python3 .knap/scripts/ingest.py --force raw/transcripts/*.md
 """
 
 import argparse
