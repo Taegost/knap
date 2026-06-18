@@ -18,11 +18,9 @@ date: 2026-06-17
 
 ## Development Principles
 
-**Fail fast, iterate.** Build the minimum, test it, see what breaks, fix it. Don't plan for problems that haven't happened yet.
+**Plan the "what" and "why." Fail fast on the "how."** Requirements docs and strategy are deliberate and thorough — they define what we're building and why. Implementation is disposable and iterative — build the minimum, test it, see what breaks, fix it. The plan tells us where to aim; failing fast tells us how to get there. Code is cheap to change. Direction is expensive to change.
 
 **Build from the ground up.** Start with the smallest useful thing. Add complexity only when the simple version proves insufficient.
-
-**Requirements before implementation.** Document what we're building and why before writing code. The brainstorm → requirements → plan → build pipeline prevents wasted effort.
 
 **Namespace everything.** Skills are prefixed with `/knap`. Files live in `.knap/`. No collisions with user-defined or plugin content.
 
