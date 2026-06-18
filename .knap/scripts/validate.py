@@ -2,8 +2,8 @@
 """Validate raw file frontmatter against schema/categories.yaml.
 
 Usage:
-    python3 scripts/validate.py raw/{category}/
-    python3 scripts/validate.py raw/transcripts/
+    python3 .knap/scripts/validate.py raw/{category}/
+    python3 .knap/scripts/validate.py raw/transcripts/
 """
 
 import argparse

@@ -9,7 +9,7 @@
 
 ## YAML Frontmatter
 
-Every raw and wiki file has YAML frontmatter. Required fields are defined in `schema/categories.yaml`.
+Every raw and wiki file has YAML frontmatter. Required fields are defined in `.knap/schema/categories.yaml`.
 
 ```yaml
 ---
@@ -56,9 +56,9 @@ date_ingested: YYYY-MM-DD
 ## Pipeline
 
 ```bash
-python3 scripts/validate.py raw/{category}/
-python3 scripts/ingest.py raw/{category}/*.md
-python3 scripts/lint.py
+python3 .knap/scripts/validate.py raw/{category}/
+python3 .knap/scripts/ingest.py raw/{category}/*.md
+python3 .knap/scripts/lint.py
 ```
 
 ## Session State
