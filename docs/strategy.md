@@ -99,3 +99,21 @@ These are tracked here until they get their own brainstorm/planning session.
 
 - [ ] Brainstorm session for update mechanism
 - [ ] How existing installations get improvements
+
+### Windows (separate plan)
+
+- [ ] `install.ps1` (Windows PowerShell installer)
+- [ ] Verify Python venv works on Windows
+- [ ] Test skill/script paths on Windows
+
+### Patterns (investigate later)
+
+- [ ] `patterns/` — procedural knowledge for recurring tasks
+- [ ] Task-specific runbooks with gotchas, steps, verification checklists
+- [ ] Separate from context layer — different concern
+
+### Events (investigate later)
+
+- [ ] `events/` — structured JSONL log for Knap internals
+- [ ] Separate from `wiki/log.md` (prose log for end-user content)
+- [ ] Decision, note, risk, todo event types
