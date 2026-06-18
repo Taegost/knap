@@ -1,1 +1,3 @@
-# Knap\n\nA generic, extensible memory framework for LLM-powered knowledge management.\n\nSee [docs/synthesis-memory-framework-design.md](docs/synthesis-memory-framework-design.md) for the design document.\n
+# Knap
+A generic, extensible memory framework for LLM-powered knowledge management.
+See [docs/synthesis-memory-framework-design.md](docs/strategy.md) for the guiding strategy.
