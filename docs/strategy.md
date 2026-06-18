@@ -16,6 +16,8 @@ date: 2026-06-17
 
 **Portable by default.** Works in any markdown editor, any AI tool, any repo. No tool-specific dependencies. Standard markdown links. YAML frontmatter. Plain text files.
 
+**OKF-aligned.** Knap's format aligns with Google's Open Knowledge Format spec. Same core structure. Key differences: separate AI/human directories, typed links, category-specific fields.
+
 ## Development Principles
 
 **Plan the "what" and "why." Fail fast on the "how."** Requirements docs and strategy are deliberate and thorough — they define what we're building and why. Implementation is disposable and iterative — build the minimum, test it, see what breaks, fix it. The plan tells us where to aim; failing fast tells us how to get there. Code is cheap to change. Direction is expensive to change.

@@ -36,6 +36,23 @@ The current repo structure is a temporary bootstrap. Framework files (ROUTER.md,
 
 **PyYAML added to requirements.txt.** Currently imported but not declared.
 
+**OKF alignment.** Knap's format aligns with Google's Open Knowledge Format (OKF) spec. Same core structure (markdown + YAML frontmatter, index.md, log.md, standard markdown links). Key differences: we split AI-facing and human-facing content into separate directories, and we add typed links and category-specific fields.
+
+**Tags field added.** Cross-cutting categorization via `tags: [tag1, tag2]` in frontmatter. Aligns with OKF.
+
+**Fields can be omitted.** Drop the `"n/a"` convention. Unknown fields are simply absent from frontmatter. Aligns with OKF's permissive consumption. Scripts must tolerate missing fields gracefully.
+
+**Optional typed links in frontmatter.** Frontmatter can include a `links` list with typed relationships:
+
+```yaml
+links:
+  - target: wiki/other-page.md
+    type: Related
+  - target: wiki/another.md          # type is optional — untyped link
+```
+
+Body markdown links are also valid. Frontmatter links are for structured, machine-readable relationships. Body links are for narrative cross-references.
+
 ## Requirements
 
 **Structure**
