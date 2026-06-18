@@ -11,9 +11,9 @@ Researches a question from multiple sources, synthesizes findings, and records t
 ## Usage
 
 ```
-/synthesize <question or topic>
-/synthesize what are the best practices for X
-/synthesize how does Y compare to Z
+/knap-synthesize <question or topic>
+/knap-synthesize what are the best practices for X
+/knap-synthesize how does Y compare to Z
 ```
 
 ## Process

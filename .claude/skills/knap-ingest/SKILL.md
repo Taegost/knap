@@ -11,9 +11,9 @@ Scaffolds and fills in content from external sources. Ingest means the full pipe
 ## Usage
 
 ```
-/ingest <url or path>
-/ingest https://www.youtube.com/watch?v=...
-/ingest raw/transcripts/existing-file.md
+/knap-ingest <url or path>
+/knap-ingest https://www.youtube.com/watch?v=...
+/knap-ingest raw/transcripts/existing-file.md
 ```
 
 ## Process
