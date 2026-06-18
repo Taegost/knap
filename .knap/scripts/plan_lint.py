@@ -112,7 +112,7 @@ def extract_file_paths(text: str) -> list[str]:
 
 
 def extract_significant_terms(text: str) -> list[str]:
-    """Extract requirement IDs and quoted/backticked terms from text."""
+    """Extract requirement IDs, quoted/backticked terms, and 3+ word phrases from text."""
     terms = []
     # Requirement IDs
     terms.extend(re.findall(r'[A-Z]+\d+', text))
@@ -121,6 +121,22 @@ def extract_significant_terms(text: str) -> list[str]:
     terms.extend(re.findall(r'"([^"]+)"', text))
     terms.extend(re.findall(r'`([^`]+)`', text))
 
+    # Extract 3+ word phrases (as specified in plan)
+    words = re.findall(r'[a-z][a-z0-9-]{2,}', text.lower())
+    stop_words = {"implement", "create", "add", "update", "fix", "the", "for", "and", "with", "from", "that", "this", "knap", "scripts", "src", "lib", "new", "old", "use", "run", "get", "set", "put"}
+    for length in [3]:
+        for i in range(len(words) - length + 1):
+            phrase_words = words[i:i + length]
+            # Skip phrases that start with stop words
+            if phrase_words[0] in stop_words:
+                continue
+            # Skip phrases that are mostly stop words
+            non_stop = [w for w in phrase_words if w not in stop_words]
+            if len(non_stop) < 2:
+                continue
+            phrase = " ".join(phrase_words)
+            if len(phrase) > 8:  # Skip very short phrases
+                terms.append(phrase)
     return terms
 
 
@@ -213,14 +229,20 @@ def check_s4_file_cross_reference(units: dict[str, dict]) -> list[str]:
             fname = Path(fpath).name
             # Check if filename or full path appears in approach
             if fname.lower() not in approach_lower and fpath.lower() not in approach_lower:
-                # Check for "no change needed" or "unchanged" patterns
-                if not re.search(r'(no change|unchanged|existing)', approach_lower):
+                # Check for "no change needed" or "unchanged" patterns near the filename
+                # Only suppress if the pattern appears in the same line as the filename reference
+                file_line_pattern = re.compile(
+                    rf'{re.escape(fname)}.*?(no change|unchanged|existing)|'
+                    rf'(no change|unchanged|existing).*?{re.escape(fname)}',
+                    re.IGNORECASE
+                )
+                if not file_line_pattern.search(approach_text):
                     findings.append(f"S4: {uid} lists {fpath} in Files but not mentioned in Approach")
 
     return findings
 
 
-def check_s5_deferred_items(sections: dict[str, str]) -> list[str]:
+def check_s5_deferred_items(sections: dict[str, str], plan_dir: Path = None) -> list[str]:
     """S5: Verify referenced files in 'Deferred for later' exist."""
     findings = []
 
@@ -237,7 +259,12 @@ def check_s5_deferred_items(sections: dict[str, str]) -> list[str]:
     # Extract file references (paths ending in .md)
     for m in re.finditer(r'`([^`]+\.md)`', deferred_text):
         ref_path = m.group(1)
-        if not Path(ref_path).exists():
+        # Check relative to plan directory if provided, otherwise use CWD
+        if plan_dir:
+            full_path = plan_dir / ref_path
+        else:
+            full_path = Path(ref_path)
+        if not full_path.exists():
             findings.append(f"S5: Deferred item references {ref_path} — file not found")
 
     return findings
@@ -357,8 +384,10 @@ def main():
         print(f"Error: {filepath} not found", file=sys.stderr)
         sys.exit(1)
 
+    plan_path = Path(filepath)
+    plan_dir = plan_path.parent
     frontmatter, defined_ids, units = parse_plan(filepath)
-    sections = parse_sections(Path(filepath).read_text())
+    sections = parse_sections(plan_path.read_text())
 
     all_findings = []
 
@@ -367,7 +396,7 @@ def main():
     all_findings.extend(check_s2_dangling_requirement_refs(defined_ids, units))
     all_findings.extend(check_s3_dangling_dependencies(units))
     all_findings.extend(check_s4_file_cross_reference(units))
-    all_findings.extend(check_s5_deferred_items(sections))
+    all_findings.extend(check_s5_deferred_items(sections, plan_dir))
     all_findings.extend(check_s6_key_term_drift(units))
     all_findings.extend(check_s7_cross_unit_terminology(units))
 

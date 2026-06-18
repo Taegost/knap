@@ -21,7 +21,7 @@ A hybrid script + LLM skill that catches internal drift in planning documents. T
 
 ```bash
 source .knap/.venv/bin/activate
-python .knap/scripts/plan_lint.py <plan-file>
+python3 .knap/scripts/plan_lint.py <plan-file>
 ```
 
 The script checks:

@@ -44,6 +44,7 @@ A well-formed plan for testing.
 
 - C1. First requirement.
 - C2. Second requirement.
+- C3. Third requirement.
 
 ## Implementation Units
 
@@ -69,6 +70,18 @@ A well-formed plan for testing.
 - **Approach:** Create `src/second.py` with the second implementation.
 - **Test scenarios:**
   - Second test passes
+- **Verification:** Tests pass.
+
+### U3. Third unit
+
+- **Goal:** Implement third thing
+- **Requirements:** C2, C3
+- **Dependencies:** U1, U2
+- **Files:**
+  - `src/third.py` — new: third module
+- **Approach:** Create `src/third.py` with the third implementation.
+- **Test scenarios:**
+  - Third test passes
 - **Verification:** Tests pass.
 """
 
@@ -401,7 +414,7 @@ class TestCheckS4FileCrossReference:
         units = {
             "U1": {
                 "Files": "`src/first.py` — unchanged",
-                "Approach": "No change needed for existing module."
+                "Approach": "No change needed for src/first.py."
             }
         }
         findings = check_s4_file_cross_reference(units)
@@ -409,11 +422,10 @@ class TestCheckS4FileCrossReference:
 
 
 class TestCheckS5DeferredItems:
-    def test_no_issues_when_files_exist(self, tmp_path):
+    def test_no_issues_when_files_exist(self, tmp_path, monkeypatch):
         sections = {"Deferred for later": "- `existing.md` — test"}
         (tmp_path / "existing.md").touch()
-        import os
-        os.chdir(tmp_path)
+        monkeypatch.chdir(tmp_path)
         findings = check_s5_deferred_items(sections)
         assert findings == []
 
@@ -490,9 +502,10 @@ class TestParsePlan:
         plan_file.write_text(WELL_FORMED_PLAN)
         frontmatter, defined_ids, units = parse_plan(str(plan_file))
         assert frontmatter["title"] == "test: Well-formed plan"
-        assert defined_ids == ["C1", "C2"]
+        assert defined_ids == ["C1", "C2", "C3"]
         assert "U1" in units
         assert "U2" in units
+        assert "U3" in units
 
     def test_exits_on_missing_frontmatter(self, tmp_path):
         plan_file = tmp_path / "test.md"
@@ -512,13 +525,18 @@ class TestParsePlan:
 class TestSmoke:
     def test_no_crash_on_existing_plans(self):
         """Run plan_lint against all existing plans without crashing."""
-        plan_dir = Path("docs/plans")
+        # Anchor to repo root (2 levels up from .knap/scripts/)
+        plan_dir = Path(__file__).resolve().parents[2] / "docs" / "plans"
         if not plan_dir.exists():
             pytest.skip("docs/plans/ not found")
 
         for plan_file in plan_dir.glob("*.md"):
-            # Should not raise
-            parse_plan(str(plan_file))
+            # parse_plan calls sys.exit(1) on malformed plans — catch that
+            try:
+                parse_plan(str(plan_file))
+            except SystemExit as e:
+                if e.code != 1:
+                    raise  # Unexpected exit code
 
 
 if __name__ == "__main__":
