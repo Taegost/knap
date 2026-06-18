@@ -12,3 +12,4 @@ Catalog of all wiki pages. Updated on every ingest.
 
 ## References
 <!-- reference pages -->
+- [Session State — 2026-06-17](reference/session-state-2026-06-17.md)
