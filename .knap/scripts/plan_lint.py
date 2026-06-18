@@ -112,7 +112,7 @@ def extract_file_paths(text: str) -> list[str]:
 
 
 def extract_significant_terms(text: str) -> list[str]:
-    """Extract requirement IDs, quoted/backticked terms, and 3+ word phrases from text."""
+    """Extract requirement IDs, quoted terms, and backtick-wrapped terms from text."""
     terms = []
     # Requirement IDs
     terms.extend(re.findall(r'[A-Z]+\d+', text))
@@ -121,22 +121,6 @@ def extract_significant_terms(text: str) -> list[str]:
     terms.extend(re.findall(r'"([^"]+)"', text))
     terms.extend(re.findall(r'`([^`]+)`', text))
 
-    # Extract 3+ word phrases (as specified in plan)
-    words = re.findall(r'[a-z][a-z0-9-]{2,}', text.lower())
-    stop_words = {"implement", "create", "add", "update", "fix", "the", "for", "and", "with", "from", "that", "this", "knap", "scripts", "src", "lib", "new", "old", "use", "run", "get", "set", "put"}
-    for length in [3]:
-        for i in range(len(words) - length + 1):
-            phrase_words = words[i:i + length]
-            # Skip phrases that start with stop words
-            if phrase_words[0] in stop_words:
-                continue
-            # Skip phrases that are mostly stop words
-            non_stop = [w for w in phrase_words if w not in stop_words]
-            if len(non_stop) < 2:
-                continue
-            phrase = " ".join(phrase_words)
-            if len(phrase) > 8:  # Skip very short phrases
-                terms.append(phrase)
     return terms
 
 
@@ -225,18 +209,15 @@ def check_s4_file_cross_reference(units: dict[str, dict]) -> list[str]:
         file_paths = extract_file_paths(files_text)
         approach_lower = approach_text.lower()
 
+        # Check if the approach indicates no changes are needed (applies to all files)
+        no_change_pattern = re.search(r'(no change|unchanged)', approach_lower)
+
         for fpath in file_paths:
             fname = Path(fpath).name
             # Check if filename or full path appears in approach
             if fname.lower() not in approach_lower and fpath.lower() not in approach_lower:
-                # Check for "no change needed" or "unchanged" patterns near the filename
-                # Only suppress if the pattern appears in the same line as the filename reference
-                file_line_pattern = re.compile(
-                    rf'{re.escape(fname)}.*?(no change|unchanged|existing)|'
-                    rf'(no change|unchanged|existing).*?{re.escape(fname)}',
-                    re.IGNORECASE
-                )
-                if not file_line_pattern.search(approach_text):
+                # If approach says "no change" or "unchanged", suppress the finding
+                if not no_change_pattern:
                     findings.append(f"S4: {uid} lists {fpath} in Files but not mentioned in Approach")
 
     return findings
@@ -246,11 +227,33 @@ def check_s5_deferred_items(sections: dict[str, str], plan_dir: Path = None) -> 
     """S5: Verify referenced files in 'Deferred for later' exist."""
     findings = []
 
-    # Find deferred section
+    # Find deferred text - could be a section heading or a bold subsection
     deferred_text = ""
-    for key in sections:
-        if "deferred" in key.lower() or "deferred for later" in key.lower():
-            deferred_text = sections[key]
+    for key, content in sections.items():
+        # Check if section heading contains "deferred"
+        if "deferred" in key.lower():
+            deferred_text = content
+            break
+        # Check if content contains "Deferred for later" as a bold subsection
+        if "**Deferred" in content or "**deferred" in content:
+            # Extract the deferred subsection content
+            lines = content.split("\n")
+            in_deferred = False
+            deferred_lines = []
+            for line in lines:
+                if re.match(r'\*\*Deferred', line, re.IGNORECASE):
+                    in_deferred = True
+                    # Capture text after the bold header on the same line
+                    after_header = re.sub(r'\*\*Deferred[^*]*\*\*:?\s*', '', line, flags=re.IGNORECASE)
+                    if after_header.strip():
+                        deferred_lines.append(after_header)
+                    continue
+                if in_deferred:
+                    # Stop at next bold subsection or end of content
+                    if re.match(r'\*\*\w', line) and not line.startswith('  '):
+                        break
+                    deferred_lines.append(line)
+            deferred_text = "\n".join(deferred_lines)
             break
 
     if not deferred_text:
@@ -259,9 +262,13 @@ def check_s5_deferred_items(sections: dict[str, str], plan_dir: Path = None) -> 
     # Extract file references (paths ending in .md)
     for m in re.finditer(r'`([^`]+\.md)`', deferred_text):
         ref_path = m.group(1)
-        # Check relative to plan directory if provided, otherwise use CWD
+        # Paths in plans are relative to repo root
+        # Resolve plan_dir to absolute path to find repo root
         if plan_dir:
-            full_path = plan_dir / ref_path
+            abs_plan_dir = plan_dir.resolve()
+            # The plan is in docs/plans/, so repo root is 2 levels up
+            repo_root = abs_plan_dir.parent.parent
+            full_path = repo_root / ref_path
         else:
             full_path = Path(ref_path)
         if not full_path.exists():

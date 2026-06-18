@@ -525,6 +525,16 @@ class TestParsePlan:
 class TestSmoke:
     def test_no_crash_on_existing_plans(self):
         """Run plan_lint against all existing plans without crashing."""
+        from plan_lint import (
+            check_s1_requirement_coverage,
+            check_s2_dangling_requirement_refs,
+            check_s3_dangling_dependencies,
+            check_s4_file_cross_reference,
+            check_s5_deferred_items,
+            check_s6_key_term_drift,
+            check_s7_cross_unit_terminology,
+        )
+
         # Anchor to repo root (2 levels up from .knap/scripts/)
         plan_dir = Path(__file__).resolve().parents[2] / "docs" / "plans"
         if not plan_dir.exists():
@@ -533,7 +543,17 @@ class TestSmoke:
         for plan_file in plan_dir.glob("*.md"):
             # parse_plan calls sys.exit(1) on malformed plans — catch that
             try:
-                parse_plan(str(plan_file))
+                frontmatter, defined_ids, units = parse_plan(str(plan_file))
+                sections = parse_sections(plan_file.read_text())
+
+                # Run all checks — should not crash
+                check_s1_requirement_coverage(defined_ids, units)
+                check_s2_dangling_requirement_refs(defined_ids, units)
+                check_s3_dangling_dependencies(units)
+                check_s4_file_cross_reference(units)
+                check_s5_deferred_items(sections, plan_file.parent)
+                check_s6_key_term_drift(units)
+                check_s7_cross_unit_terminology(units)
             except SystemExit as e:
                 if e.code != 1:
                     raise  # Unexpected exit code
