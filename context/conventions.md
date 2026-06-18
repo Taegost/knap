@@ -61,10 +61,14 @@ python3 scripts/ingest.py raw/{category}/*.md
 python3 scripts/lint.py
 ```
 
+## Session State
+
+Session state lives at `raw/reference/session-state-*.md`. It's a living document — update it as significant decisions are made or state changes, not just at session end. ROUTER.md links to it. The next session reads ROUTER.md → follows the link → knows where we left off.
+
 ## GROW Loop
 
 After every task:
 1. **Ground** — name what changed
-2. **Record** — update relevant wiki pages, router state
+2. **Record** — update relevant wiki pages, session state, router state
 3. **Orient** — create/update skill if task can recur
 4. **Write** — bump timestamps, log to wiki/log.md

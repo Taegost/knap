@@ -16,7 +16,5 @@ Read CLAUDE.md first. Then identify your task type below and load only the files
 
 ## Current Project State
 
-<!-- Updated by GROW loop or manually -->
-Last updated: 2026-06-17
-
-Knap is an early-stage framework for memory and self-improvement. Core architecture is in place: raw/wiki/schema structure, routing, transcript fetcher, ingest and synthesize skills. Two transcripts ingested. Self-improvement loop not yet built.
+<!-- Updated as we go — living document, not session-end dump -->
+See: [Session State](../raw/reference/session-state-2026-06-17.md)
