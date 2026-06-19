@@ -10,3 +10,6 @@ raw/transcripts/2026-06-17-stop-watching-tutorials-build-these-4-claude-projects
 ## [2026-06-17] ingest | Session State — 2026-06-17
 raw/reference/session-state-2026-06-17.md → wiki/reference/session-state-2026-06-17.md
 
+## [2026-06-19] ingest | Skill Identification Prompt
+raw/prompts/skill-identification.md → wiki/prompts/skill-identification.md
+

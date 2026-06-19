@@ -48,13 +48,6 @@ ANALYSIS_SECTION: dict[str, tuple[str, str]] = {
     for cat, meta in CATEGORIES.items()
 }
 
-# Default values for fields
-FIELD_DEFAULTS: dict[str, str | list] = {
-    "description": "n/a",
-    "channel": "n/a",
-    "format": "n/a",
-}
-
 
 def reload() -> None:
     """Reload schema from disk. Call after editing categories.yaml."""

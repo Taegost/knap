@@ -84,27 +84,60 @@ def check_uningested(raw_dir: str, wiki_dir: str) -> list[str]:
 
 
 def check_index(wiki_dir: str) -> list[str]:
-    index_path = Path(wiki_dir) / "index.md"
-    if not index_path.exists():
-        return [f"missing: {index_path}"]
-
-    content = index_path.read_text()
-    index_entries = set()
-    for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
-        index_entries.add(m.group(2))
-
-    actual_pages = set()
-    for md in Path(wiki_dir).rglob("*.md"):
-        if md.name in ("index.md", "log.md"):
-            continue
-        rel = str(md.relative_to(wiki_dir))
-        actual_pages.add(rel)
-
+    """Check master index links to category indexes, and category indexes are accurate."""
     issues = []
-    for entry in sorted(index_entries - actual_pages):
-        issues.append(f"index ghost: {entry} listed but does not exist")
-    for page in sorted(actual_pages - index_entries):
-        issues.append(f"index missing: {page}")
+    wiki_path = Path(wiki_dir)
+
+    # Check master index exists
+    master_index = wiki_path / "index.md"
+    if not master_index.exists():
+        issues.append(f"missing: {master_index}")
+        return issues
+
+    # Check category indexes
+    for cat_dir in sorted(wiki_path.iterdir()):
+        if not cat_dir.is_dir():
+            continue
+
+        cat_index = cat_dir / "index.md"
+        cat_name = cat_dir.name
+
+        # Check category index exists
+        if not cat_index.exists():
+            # Only require index if category has wiki pages
+            pages = [f for f in cat_dir.glob("*.md") if f.name != "index.md"]
+            if pages:
+                issues.append(f"missing: {cat_index}")
+            continue
+
+        # Check entries in category index match actual pages
+        content = cat_index.read_text()
+        index_entries = set()
+        for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
+            index_entries.add(m.group(2))
+
+        actual_pages = set()
+        for md in cat_dir.glob("*.md"):
+            if md.name == "index.md":
+                continue
+            actual_pages.add(md.name)
+
+        for entry in sorted(index_entries - actual_pages):
+            issues.append(f"index ghost: {cat_name}/{entry} listed but does not exist")
+        for page in sorted(actual_pages - index_entries):
+            issues.append(f"index missing: {cat_name}/{page}")
+
+    # Check master index links to category indexes
+    master_content = master_index.read_text()
+    for cat_dir in sorted(wiki_path.iterdir()):
+        if not cat_dir.is_dir():
+            continue
+        cat_index = cat_dir / "index.md"
+        if cat_index.exists():
+            cat_link = f"{cat_dir.name}/index.md"
+            if cat_link not in master_content:
+                issues.append(f"master index missing link to: {cat_link}")
+
     return issues
 
 

@@ -20,7 +20,7 @@ category: "{category}"
 ---
 ```
 
-Missing values: use `"n/a"` for unknown scalars, `[]` for "none found" lists. Never omit a field.
+Fields may be omitted when unknown. Scripts tolerate missing fields gracefully. Use `[]` for "none found" lists.
 
 ## Cross-References
 

@@ -14,7 +14,7 @@ Create the context layer (scope, conventions, structure, decisions), update scri
 
 ## Problem Frame
 
-The migration to `.knap/` is complete (separate plan). Two pieces remain: the context layer needs to be created, and the single `wiki/index.md` won't scale past a couple hundred documents. Both block further progress — the context layer defines conventions and structure for all downstream work, and the index will bloat context as content grows.
+The migration to `.knap/` is handled separately (`docs/plans/2026-06-18-003-feat-migration-to-knap-dir-plan.md`). Two pieces remain: the context layer needs to be created, and the single `wiki/index.md` won't scale past a couple hundred documents. Both block further progress — the context layer defines conventions and structure for all downstream work, and the index will bloat context as content grows.
 
 ## Key Decisions
 
@@ -32,14 +32,14 @@ The migration to `.knap/` is complete (separate plan). Two pieces remain: the co
 
 ## Requirements
 
-**Context** (plan-local IDs; supersede origin document R6-R9)
+**Context** (plan-local IDs; new requirements for context files)
 
 - C1. `.knap/context/scope.md` defines project purpose, goals, and boundaries.
 - C2. `.knap/context/conventions.md` defines rules, naming, hard constraints, workflow.
 - C3. `.knap/context/structure.md` defines directory layout and relationships.
 - C4. `.knap/context/decisions.md` records key choices with rationale.
 
-**Index** (plan-local IDs; no origin-document equivalents)
+**Index** (plan-local IDs; implement origin R13)
 
 - I1. `ingest.py` generates per-category indexes (`wiki/{category}/index.md`) in addition to master index.
 - I2. `lint.py` checks per-category indexes alongside master index.
@@ -75,7 +75,7 @@ The migration to `.knap/` is complete (separate plan). Two pieces remain: the co
   - `.knap/scripts/schema.py` — remove FIELD_DEFAULTS entirely (dead code — imported by ingest.py but never referenced in `build_wiki_page`)
   - `.knap/scripts/validate.py` — enforce all required fields (global and category-specific) as errors; optional fields produce no output
   - `.knap/scripts/ingest.py` — remove FIELD_DEFAULTS import; update `_val()` to treat actual None values as skip (currently only filters 'n/a' strings)
-- **Approach:** FIELD_DEFAULTS is unused — `ingest.py` imports it but `build_wiki_page` never references it. Remove from `schema.py` entirely. `validate.py` enforces all required fields (global and category-specific) as errors; optional fields are not enforced at all (no warnings for missing optionals). `ingest.py`'s `_val()` function already filters 'n/a' strings — update it to also skip actual None values so absent fields are omitted from wiki output.
+- **Approach:** FIELD_DEFAULTS is unused — `ingest.py` imports it but `build_wiki_page` never references it. Remove from `schema.py` entirely. `validate.py` currently reports missing category-specific required fields as warnings. Change these to errors to match the "enforce all required fields as errors" policy. Optional fields produce no output. `ingest.py`'s `_val()` function already filters None values and 'n/a' strings — no change needed to `_val()` itself. Remove the FIELD_DEFAULTS import since it is unused.
 - **Test scenarios:**
   - `python3 .knap/scripts/validate.py raw/transcripts/` passes with no warnings for missing optional fields
   - A raw file with only required fields (no optional) validates and ingests cleanly
@@ -109,7 +109,7 @@ The migration to `.knap/` is complete (separate plan). Two pieces remain: the co
 **Deferred for later (in other plans):**
 - Orphan content checker — `docs/plans/2026-06-18-005-feat-orphan-content-checker-plan.md`
 - CWD-relative path resolution for `schema.py` — `docs/plans/2026-06-18-004-chore-cwd-relative-paths.md`
-- Structural migration to `.knap/` — `docs/plans/2026-06-18-003-feat-migration-to-knap-dir-plan.md` (completed)
+- Structural migration to `.knap/` — `docs/plans/2026-06-18-003-feat-migration-to-knap-dir-plan.md`
 - Typed links — `docs/plans/2026-06-18-002-feat-typed-links-plan.md`
 - Install scripts (`install.sh`, `install.ps1`) — separate plan
 - Windows setup — separate plan

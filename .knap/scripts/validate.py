@@ -59,7 +59,7 @@ def validate_file(filepath: str) -> list[tuple[str, str]]:
     if category in CATEGORY_FIELDS:
         for field in CATEGORY_FIELDS[category]:
             if field not in data:
-                issues.append(("warning", f"missing {category} field: {field}"))
+                issues.append(("error", f"missing {category} required field: {field}"))
 
     known = set(REQUIRED_FIELDS + OPTIONAL_FIELDS + CATEGORY_FIELDS.get(category, []))
     for key in data:

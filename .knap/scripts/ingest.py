@@ -18,13 +18,12 @@ from pathlib import Path
 
 import yaml
 
-from schema import ANALYSIS_SECTION, CATEGORY_FIELDS, FIELD_DEFAULTS
+from schema import ANALYSIS_SECTION, CATEGORY_FIELDS
 
 WIKI_DIR = "wiki"
 INDEX_PATH = "wiki/index.md"
 LOG_PATH = "wiki/log.md"
 
-INDEX_CATEGORY_MARKER = "<!-- {category} pages -->"
 LOG_ENTRY_TEMPLATE = "## [{date}] ingest | {title}\n{raw_path} → {wiki_path}\n"
 
 
@@ -160,41 +159,67 @@ def raw_to_wiki_path(raw_path: str) -> str:
     return str(Path(*parts))
 
 
-def update_index(category: str, wiki_path: str, title: str) -> None:
-    index = Path(INDEX_PATH)
-    if not index.exists():
-        return
+def _update_category_index(category: str, wiki_path: str, title: str) -> None:
+    """Update wiki/{category}/index.md with a page entry."""
+    # Use the actual directory from the wiki path for the category index
+    # This handles cases where the category name differs from the directory name
+    wiki_parent = Path(wiki_path).parent
+    cat_index = wiki_parent / "index.md"
 
-    lines = index.read_text().splitlines()
-    marker = INDEX_CATEGORY_MARKER.format(category=category)
-    entry = f"- [{title}]({wiki_path.replace('wiki/', '')})"
+    # Create category index if it doesn't exist
+    if not cat_index.exists():
+        wiki_parent.mkdir(parents=True, exist_ok=True)
+        cat_index.write_text(f"# {category.title()}\n\nCatalog of {category} pages.\n\n")
 
-    marker_idx = None
-    for i, line in enumerate(lines):
-        if marker in line:
-            marker_idx = i
-            break
+    lines = cat_index.read_text().splitlines()
 
-    if marker_idx is None:
-        print(f"⚠  no section for category '{category}' in index.md — skipping")
-        return
+    # Build relative path from category index directory to wiki page
+    rel_path = Path(wiki_path).name
+    entry = f"- [{title}]({rel_path})"
 
+    # Check for duplicate
     for line in lines:
         if entry in line:
-            print(f"  index.md: entry already exists for {title}")
+            print(f"  {wiki_parent.name}/index.md: entry already exists for {title}")
             return
 
-    # Insert after last existing entry in this section
-    for i in range(marker_idx + 1, len(lines)):
-        if lines[i].startswith("- ["):
-            continue
-        lines.insert(i, entry)
-        break
-    else:
-        lines.append(entry)
+    # Append entry at end
+    if not lines[-1].strip() == "":
+        lines.append("")
+    lines.append(entry)
+
+    cat_index.write_text("\n".join(lines) + "\n")
+    print(f"  {wiki_parent.name}/index.md: added {title}")
+
+
+def _update_master_index(category: str, wiki_path: str) -> None:
+    """Ensure master index links to the category index."""
+    index = Path(INDEX_PATH)
+    if not index.exists():
+        # Create master index
+        index.write_text("# Wiki Index\n\nCatalog of all wiki pages. Updated on every ingest.\n\n")
+
+    content = index.read_text()
+    # Use the actual directory name from the wiki path
+    dir_name = Path(wiki_path).parent.name
+    cat_link = f"[{dir_name.title()}]({dir_name}/index.md)"
+
+    # Check if category link already exists
+    if cat_link in content:
+        return
+
+    # Add section with link to category index
+    lines = content.splitlines()
+    lines.extend(["", f"## {dir_name.title()}", f"<!-- {dir_name} pages -->", f"- {cat_link}"])
 
     index.write_text("\n".join(lines) + "\n")
-    print(f"  index.md: added {title}")
+    print(f"  index.md: linked to {dir_name}/index.md")
+
+
+def update_index(category: str, wiki_path: str, title: str) -> None:
+    """Update both category index and master index."""
+    _update_category_index(category, wiki_path, title)
+    _update_master_index(category, wiki_path)
 
 
 def append_log(raw_path: str, wiki_path: str, title: str) -> None:
