@@ -65,6 +65,14 @@ python3 .knap/scripts/lint.py
 
 Session state lives at `raw/reference/session-state-*.md`. It's a living document — update it as significant decisions are made or state changes, not just at session end. ROUTER.md links to it. The next session reads ROUTER.md → follows the link → knows where we left off.
 
+## Script Path Resolution
+
+All production scripts (`.knap/scripts/*.py`) use **CWD-relative paths** and assume CWD = repo root. Invocation: `python3 .knap/scripts/<name>.py` from the repo root.
+
+- Paths are plain strings wrapped in `Path()`: `Path("wiki/index.md")`, `Path("raw/...")`, `Path(".knap/schema/categories.yaml")`
+- No `__file__`-relative resolution in production scripts
+- **Test files are excluded** — `__file__`-relative resolution is standard pytest practice
+
 ## GROW Loop
 
 After every task:

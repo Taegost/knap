@@ -7,7 +7,7 @@ instead of hardcoding category definitions.
 import yaml
 from pathlib import Path
 
-_SCHEMA_PATH = Path(__file__).parent.parent / "schema" / "categories.yaml"
+_SCHEMA_PATH = Path(".knap/schema/categories.yaml")
 
 
 def _load_schema() -> dict:
