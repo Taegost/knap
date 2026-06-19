@@ -1,7 +1,7 @@
 ---
 title: "feat: Memory System Foundation"
 type: feat
-status: active
+status: completed
 date: 2026-06-17
 origin: docs/brainstorms/2026-06-17-knap-framework-requirements.md
 ---
