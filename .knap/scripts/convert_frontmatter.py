@@ -339,7 +339,7 @@ Examples:
     args = parser.parse_args()
 
     # Get repo root (CWD-relative, per conventions.md)
-    repo_root = Path(".")
+    repo_root = Path.cwd()
 
     # Run baseline validation if requested
     baseline_pass = set()
