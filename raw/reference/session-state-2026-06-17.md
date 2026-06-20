@@ -8,6 +8,9 @@ description: Current project state, key decisions, and what's next. Updated at e
 tags:
 - session-state
 - meta
+links:
+- target: '[session-state-2026-06-17](wiki/reference/session-state-2026-06-17.md)'
+  type: IngestedTo
 ---
 
 ## What Knap Is

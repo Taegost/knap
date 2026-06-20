@@ -5,6 +5,9 @@ date_farmed: 2026-06-17
 category: transcript
 channel: Austin Marchese
 format: YouTube video transcript
+links:
+- target: '[2026-06-17-stop-watching-tutorials-build-these-4-claude-projects-to-10x.transcript](wiki/transcripts/2026-06-17-stop-watching-tutorials-build-these-4-claude-projects-to-10x.transcript.md)'
+  type: IngestedTo
 ---
 
 [0:00] Project number one is your own board of

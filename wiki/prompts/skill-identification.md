@@ -1,6 +1,8 @@
 ---
-source: '[skill-identification.md](../raw/prompts/skill-identification.md)'
 date_ingested: '2026-06-19'
+links:
+- target: '[skill-identification.md](raw/prompts/skill-identification.md)'
+  type: IngestedFrom
 ---
 
 # Skill Identification Prompt

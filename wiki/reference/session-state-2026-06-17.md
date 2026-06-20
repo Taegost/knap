@@ -1,9 +1,11 @@
 ---
-source: '[session-state-2026-06-17.md](../raw/reference/session-state-2026-06-17.md)'
 date_ingested: '2026-06-17'
 tags:
 - session-state
 - meta
+links:
+- target: '[session-state-2026-06-17.md](raw/reference/session-state-2026-06-17.md)'
+  type: IngestedFrom
 ---
 
 # Session State — 2026-06-17

@@ -45,6 +45,7 @@ Integration:
 
 import argparse
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime
@@ -262,7 +263,90 @@ def convert_file(filepath: str, dry_run: bool = False) -> tuple[str, str | None]
         return "failed", f"Write error: {e}"
 
 
-def run_validate(paths: list[str] | None = None) -> dict[str, set[str]]:
+# Pattern to extract path from source field: [name](../raw/...)
+_SOURCE_RE = re.compile(r'\[([^\]]*)\]\(\.\./(.+)\)')
+
+
+def migrate_source_field(filepath: str, dry_run: bool = False) -> tuple[str, str | None]:
+    """Convert a source frontmatter field to an IngestedFrom link.
+
+    Args:
+        filepath: Absolute path to the markdown file
+        dry_run: If True, preview changes without writing
+
+    Returns:
+        Tuple of (status, detail)
+    """
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent))
+    from add_frontmatter_link import _write_frontmatter_link
+
+    with open(filepath, newline="") as f:
+        content = f.read()
+
+    data, error, body = parse_frontmatter(content)
+    if error:
+        return "skipped", error
+
+    source = data.get("source")
+    if source is None:
+        # Check if IngestedFrom link exists — write reciprocal if raw file exists
+        links = data.get("links", [])
+        for entry in links:
+            if isinstance(entry, dict) and entry.get("type") == "IngestedFrom":
+                target = entry.get("target", "")
+                from check_links import _extract_url
+                raw_path = _extract_url(target)
+                raw_full = Path.cwd() / raw_path
+                if raw_full.exists() and raw_full.suffix == ".md":
+                    source_rel = str(Path(filepath).resolve().relative_to(Path.cwd()))
+                    source_name = Path(filepath).stem
+                    _write_frontmatter_link(str(raw_full), f"[{source_name}]({source_rel})", "IngestedTo")
+                return "unchanged", "No source field (IngestedFrom exists)"
+        return "unchanged", "No source field"
+
+    # Extract raw path from source markdown link
+    m = _SOURCE_RE.match(str(source))
+    if not m:
+        return "failed", f"Malformed source field: {source}"
+
+    name = m.group(1)
+    raw_path = m.group(2)  # e.g., "raw/transcripts/file.md"
+
+    if dry_run:
+        return "would_migrate", f"source → IngestedFrom [{name}]({raw_path})"
+
+    # Add IngestedFrom link using the sole entry point
+    link_modified = _write_frontmatter_link(filepath, f"[{name}]({raw_path})", "IngestedFrom")
+
+    # Re-read the file and remove source field
+    source_removed = False
+    with open(filepath, newline="") as f:
+        content = f.read()
+    data, error, body = parse_frontmatter(content)
+    if error:
+        return "failed", f"Failed to re-parse after link addition: {error}"
+
+    if "source" in data:
+        del data["source"]
+        source_removed = True
+        new_yaml = serialize_frontmatter(data)
+        line_ending = detect_line_ending(content)
+        new_content = f"---{line_ending}{new_yaml}---{body}"
+        with open(filepath, "w", newline=line_ending) as f:
+            f.write(new_content)
+
+    # Write reciprocal IngestedTo to the raw file
+    raw_full = Path.cwd() / raw_path
+    if raw_full.exists() and raw_full.suffix == ".md":
+        source_rel = str(Path(filepath).resolve().relative_to(Path.cwd()))
+        source_name = Path(filepath).stem
+        _write_frontmatter_link(str(raw_full), f"[{source_name}]({source_rel})", "IngestedTo")
+
+    if not link_modified and not source_removed:
+        return "unchanged", "Already migrated"
+
+    return "migrated", f"source → IngestedFrom [{name}]({raw_path})"
     """Run validate.py and capture results.
 
     Args:
@@ -335,6 +419,11 @@ Examples:
         action="store_true",
         help="Run validate.py before and after conversion"
     )
+    parser.add_argument(
+        "--migrate-source",
+        action="store_true",
+        help="Migrate source frontmatter fields to IngestedFrom links"
+    )
 
     args = parser.parse_args()
 
@@ -355,6 +444,61 @@ Examples:
         print("No .md files found.", file=sys.stderr)
         sys.exit(1)
 
+    if args.migrate_source:
+        # Source → IngestedFrom migration mode
+        print(f"\n── Migrating source fields in {len(files)} files ──")
+
+        results = {"migrated": 0, "unchanged": 0, "skipped": 0, "failed": 0, "would_migrate": 0}
+        errors = []
+
+        for filepath in files:
+            try:
+                status, detail = migrate_source_field(filepath, dry_run=args.dry_run)
+                rel_path = str(Path(filepath).relative_to(repo_root))
+
+                if status == "migrated":
+                    print(f"  ✓ {rel_path}: {detail}")
+                    results["migrated"] += 1
+                elif status == "would_migrate":
+                    print(f"  → {rel_path}: {detail}")
+                    results["would_migrate"] += 1
+                elif status == "unchanged":
+                    results["unchanged"] += 1
+                elif status == "skipped":
+                    results["skipped"] += 1
+                elif status == "failed":
+                    print(f"  ✗ {rel_path}: {detail}", file=sys.stderr)
+                    results["failed"] += 1
+                    errors.append((rel_path, detail))
+
+            except Exception as e:
+                rel_path = str(Path(filepath).relative_to(repo_root))
+                print(f"  ✗ {rel_path}: Unexpected error: {e}", file=sys.stderr)
+                results["failed"] += 1
+                errors.append((rel_path, str(e)))
+
+        print(f"\n── Summary ──")
+        if args.dry_run:
+            print(f"  Would migrate: {results['would_migrate']}")
+        else:
+            print(f"  Migrated: {results['migrated']}")
+        print(f"  Unchanged: {results['unchanged']}")
+        print(f"  Skipped:   {results['skipped']}")
+        print(f"  Failed:    {results['failed']}")
+
+        if results["failed"] > 0:
+            print(f"\n✗ {results['failed']} files failed to migrate", file=sys.stderr)
+            for filepath, error in errors:
+                print(f"  - {filepath}: {error}", file=sys.stderr)
+            sys.exit(1)
+
+        if args.dry_run:
+            print("\n✓ Dry run complete. Run without --dry-run to apply changes.")
+        else:
+            print("\n✓ Migration complete.")
+        return
+
+    # Standard frontmatter conversion mode
     print(f"\n── Processing {len(files)} files ──")
 
     # Track results

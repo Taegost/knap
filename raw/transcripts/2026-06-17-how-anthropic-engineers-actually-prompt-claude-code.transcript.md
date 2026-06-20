@@ -5,6 +5,9 @@ date_farmed: 2026-06-17
 category: transcript
 channel: Austin Marchese
 format: YouTube video transcript
+links:
+- target: '[2026-06-17-how-anthropic-engineers-actually-prompt-claude-code.transcript](wiki/transcripts/2026-06-17-how-anthropic-engineers-actually-prompt-claude-code.transcript.md)'
+  type: IngestedTo
 ---
 
 [0:00] I listened to Anthropic's engineers at
