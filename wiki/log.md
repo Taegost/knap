@@ -13,6 +13,3 @@ raw/reference/session-state-2026-06-17.md → wiki/reference/session-state-2026-
 ## [2026-06-19] ingest | Skill Identification Prompt
 raw/prompts/skill-identification.md → wiki/prompts/skill-identification.md
 
-## [2026-06-20] ingest | Test File
-raw/transcripts/test-typed-links.md → wiki/transcripts/test-typed-links.md
-

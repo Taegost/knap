@@ -20,6 +20,7 @@ from pathlib import Path
 import yaml
 
 from schema import REQUIRED_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES
+from check_links import check_link as _check_link
 
 
 def parse_frontmatter(filepath: str) -> dict | None:
@@ -46,31 +47,68 @@ def raw_to_wiki(raw_path: str, raw_dir: str, wiki_dir: str) -> str:
     return str(Path(wiki_dir) / rel)
 
 
-def extract_source_link(page_path: str) -> str | None:
-    content = Path(page_path).read_text()
-    if not content.startswith("---"):
-        return None
-    end = content.find("---", 3)
-    if end == -1:
-        return None
-    fm = content[3:end]
-    # source: "[name](../raw/...)" — extract the path
-    m = re.search(r'source:\s*"?\[.*?\]\(\.\./(.+?)\)"?', fm)
-    if m:
-        return m.group(1)
-    return None
+def check_links(wiki_dir: str, raw_dir: str) -> list[str]:
+    """Validate frontmatter and body links across all markdown files.
 
+    Frontmatter internal link failures are errors; external URL failures are warnings.
+    Body link failures are warnings (informational).
+    """
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent))
 
-def check_orphans(wiki_dir: str, raw_dir: str) -> list[str]:
     issues = []
-    for md in sorted(Path(wiki_dir).rglob("*.md")):
-        if md.name in ("index.md", "log.md"):
+    skip_dirs = {".claude", ".venv", ".git", "__pycache__"}
+    repo_root = Path.cwd()
+
+    for md in sorted(repo_root.rglob("*.md")):
+        # Skip non-content directories
+        parts = md.relative_to(repo_root).parts
+        if any(p in skip_dirs for p in parts):
             continue
-        source = extract_source_link(str(md))
-        if source is None:
-            issues.append(f"orphan: {md} — no source link found")
-        elif not Path(source).exists():
-            issues.append(f"orphan: {md} — source {source} does not exist")
+
+        try:
+            content = md.read_text()
+        except Exception:
+            continue
+
+        if not content.startswith("---"):
+            continue
+        end = content.find("---", 3)
+        if end == -1:
+            continue
+
+        fm_yaml = content[3:end]
+        body = content[end + 3:]
+        rel_path = str(md.relative_to(repo_root))
+
+        # Check frontmatter links
+        try:
+            fm = yaml.safe_load(fm_yaml)
+            if isinstance(fm, dict):
+                links = fm.get("links", [])
+                if isinstance(links, list):
+                    for entry in links:
+                        if isinstance(entry, dict) and "target" in entry:
+                            target = entry["target"]
+                            result = _check_link(target)
+                            if not result.exists:
+                                if result.is_external:
+                                    issues.append(f"warning: {rel_path} — external link may be broken: {target}")
+                                else:
+                                    issues.append(f"error: {rel_path} — broken frontmatter link: {target}")
+        except yaml.YAMLError:
+            pass
+
+        # Check body markdown links
+        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', body):
+            target = m.group(2)
+            # Skip anchors and heading links
+            if target.startswith("#"):
+                continue
+            result = _check_link(target, relative_to=str(md))
+            if not result.exists:
+                issues.append(f"warning: {rel_path} — broken body link: {target}")
+
     return issues
 
 
@@ -171,7 +209,7 @@ def main():
     wiki_dir = Path("wiki").resolve()
 
     total = 0
-    total += print_check("Orphan wiki pages", check_orphans(str(wiki_dir), str(raw_dir)))
+    total += print_check("Link validation", check_links(str(wiki_dir), str(raw_dir)))
     total += print_check("Un-ingested raw files", check_uningested(str(raw_dir), str(wiki_dir)))
     total += print_check("Index accuracy", check_index(str(wiki_dir)))
     total += print_check("Frontmatter validation", check_frontmatter(str(raw_dir)))
