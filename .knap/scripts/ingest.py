@@ -82,11 +82,17 @@ def build_wiki_page(fm: dict, raw_path: str, date_ingested: str) -> str:
     title = fm.get("title", Path(raw_path).stem)
     category = fm.get("category", "unknown")
 
-    # Frontmatter
+    # Build frontmatter dict
     wiki_fm = {
-        "source": f"[{Path(raw_path).name}](../{raw_path})",
+        "links": [
+            {"target": f"[{Path(raw_path).name}]({raw_path})", "type": "IngestedFrom"}
+        ],
         "date_ingested": date_ingested,
     }
+    # Copy links from raw frontmatter if present
+    if "links" in fm and isinstance(fm["links"], list):
+        wiki_fm["links"].extend(fm["links"])
+
     for field in ["website", "address", "phone", "hours", "email", "channel", "format"]:
         val = _val(fm.get(field))
         if val:
@@ -99,16 +105,7 @@ def build_wiki_page(fm: dict, raw_path: str, date_ingested: str) -> str:
             wiki_fm[field] = val
 
     lines = ["---"]
-    for key, value in wiki_fm.items():
-        if isinstance(value, list):
-            if value:
-                lines.append(f"{key}:")
-                for item in value:
-                    lines.append(f"  - {item}")
-            else:
-                lines.append(f"{key}: []")
-        else:
-            lines.append(f'{key}: "{value}"')
+    lines.append(yaml.dump(wiki_fm, default_flow_style=False, sort_keys=False).rstrip())
     lines.append("---")
     lines.append("")
 
