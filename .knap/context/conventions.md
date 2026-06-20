@@ -28,6 +28,31 @@ Standard markdown links: `[Page Name](../path/to/page.md)`
 
 Works in every markdown editor. Relative paths ensure links work regardless of clone location.
 
+**Frontmatter links** use repo-root-relative paths (e.g., `[name](raw/transcripts/file.md)`).
+**Body markdown links** can use either repo-root-relative or file-relative paths — both are valid.
+
+## Frontmatter Links
+
+Wiki and raw files support typed links in frontmatter via the `links` field.
+
+```yaml
+links:
+  - target: "[Other Page](wiki/other-page.md)"
+    type: Related
+  - target: "[Another Page](wiki/another.md)"  # type defaults to Related
+  - target: "[Paper](raw/research/some-paper.pdf)"
+```
+
+**Link types:** `Related` (default), `Parent`/`Child`, `Supersedes`/`SupersededBy`, `IngestedFrom`/`IngestedTo`, `SynthesizedFrom`/`SynthesizedTo`. Extensible via `categories.yaml` `link_types` key.
+
+**Target format:** `[name](path)` — markdown link format. Paths are repo-root-relative for internal files, full URIs for external resources.
+
+**Entry point:** All scripts that add frontmatter links must use `add_frontmatter_link()`. It handles deduplication, type updates, and reciprocal link generation.
+
+## Serialization
+
+Frontmatter serialization uses `yaml.dump(data, default_flow_style=False, sort_keys=False)`. This follows the patterns from the markdown-first converter plan. Manual string formatting is not used — it breaks on dict-in-list structures like `links`.
+
 ## Raw vs Wiki
 
 - **Raw** = immutable source. The LLM reads but never modifies. Contains the full original content.
@@ -37,7 +62,9 @@ Works in every markdown editor. Relative paths ensure links work regardless of c
 
 ```markdown
 ---
-source: "raw/{category}/{slug}.md"
+links:
+  - target: "[slug.md](raw/{category}/{slug}.md)"
+    type: IngestedFrom
 date_ingested: YYYY-MM-DD
 ---
 

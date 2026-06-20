@@ -10,6 +10,22 @@ Key architectural choices and their rationale.
 
 **Trade-off:** Wikilinks are more concise and Obsidian-native. If Obsidian becomes the primary editor and cross-editor portability is less important, wikilinks could be reconsidered.
 
+**Frontmatter vs body:** Frontmatter links use repo-root-relative paths. Body links can use either repo-root-relative or file-relative.
+
+## Typed Links
+
+**Decision:** Frontmatter `links` field with typed relationships replaces the hardcoded `source` field.
+
+**Rationale:** The `source` field only tracked ingestion provenance. Typed links support richer relationships: `Parent`/`Child` for hierarchy, `Supersedes`/`SupersededBy` for versioning, `IngestedFrom`/`IngestedTo` and `SynthesizedFrom`/`SynthesizedTo` for provenance. `Related` is the default type.
+
+**Link type set:** 9 base types with bidirectional pairs. Extensible per-repo via `categories.yaml` `link_types` key.
+
+**Single entry point:** `add_frontmatter_link()` is the sole entry point for writing frontmatter links. It handles deduplication, type updates, and reciprocal link generation. No script writes to the `links` field directly.
+
+**Format:** `[name](path)` markdown link format for targets. Allows markdown IDEs to traverse links natively.
+
+**source → IngestedFrom:** The `source` frontmatter field is replaced by an `IngestedFrom` entry in `links`. Existing wiki pages are migrated by `convert_frontmatter.py --migrate-source`.
+
 ## Retrieval Strategy
 
 **Decision:** Hybrid — router + index + search fallback
