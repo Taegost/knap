@@ -2,11 +2,10 @@
 """Lint the wiki for structural issues.
 
 Checks:
-  1. Orphan wiki pages (broken source links)
+  1. Link validation (frontmatter and body links)
   2. Un-ingested raw files (no wiki page)
-  3. Stale wiki pages (raw newer than wiki)
-  4. Index accuracy (entries match real files)
-  5. Frontmatter validation
+  3. Index accuracy (entries match real files)
+  4. Frontmatter validation
 
 Usage:
     python3 .knap/scripts/lint.py
@@ -47,15 +46,12 @@ def raw_to_wiki(raw_path: str, raw_dir: str, wiki_dir: str) -> str:
     return str(Path(wiki_dir) / rel)
 
 
-def check_links(wiki_dir: str, raw_dir: str) -> list[str]:
+def check_links() -> list[str]:
     """Validate frontmatter and body links across all markdown files.
 
     Frontmatter internal link failures are errors; external URL failures are warnings.
     Body link failures are warnings (informational).
     """
-    import sys as _sys
-    _sys.path.insert(0, str(Path(__file__).parent))
-
     issues = []
     skip_dirs = {".claude", ".venv", ".git", "__pycache__"}
     repo_root = Path.cwd()
@@ -209,7 +205,7 @@ def main():
     wiki_dir = Path("wiki").resolve()
 
     total = 0
-    total += print_check("Link validation", check_links(str(wiki_dir), str(raw_dir)))
+    total += print_check("Link validation", check_links())
     total += print_check("Un-ingested raw files", check_uningested(str(raw_dir), str(wiki_dir)))
     total += print_check("Index accuracy", check_index(str(wiki_dir)))
     total += print_check("Frontmatter validation", check_frontmatter(str(raw_dir)))

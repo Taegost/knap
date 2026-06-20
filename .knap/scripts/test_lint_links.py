@@ -37,7 +37,7 @@ class TestCheckLinks:
         target.write_text("# Target")
         fm = {"title": "Test", "links": [{"target": "[Target](wiki/test/target.md)", "type": "Related"}]}
         _make_file(wiki / "source.md", fm)
-        issues = check_links(str(tmp_path / "wiki"), str(tmp_path / "raw"))
+        issues = check_links()
         assert issues == []
 
     def test_broken_frontmatter_link_error(self, tmp_path, monkeypatch):
@@ -48,7 +48,7 @@ class TestCheckLinks:
         wiki.mkdir(parents=True)
         fm = {"title": "Test", "links": [{"target": "[Missing](wiki/nonexistent.md)", "type": "Related"}]}
         _make_file(wiki / "source.md", fm)
-        issues = check_links(str(tmp_path / "wiki"), str(tmp_path / "raw"))
+        issues = check_links()
         assert any("error" in i and "broken frontmatter link" in i for i in issues)
 
     def test_broken_body_link_warning(self, tmp_path, monkeypatch):
@@ -59,7 +59,7 @@ class TestCheckLinks:
         wiki.mkdir(parents=True)
         body = "\n[Missing](wiki/nonexistent.md)\n"
         _make_file(wiki / "source.md", {"title": "Test"}, body)
-        issues = check_links(str(tmp_path / "wiki"), str(tmp_path / "raw"))
+        issues = check_links()
         assert any("warning" in i and "broken body link" in i for i in issues)
 
     def test_no_frontmatter_links(self, tmp_path, monkeypatch):
@@ -69,7 +69,7 @@ class TestCheckLinks:
         wiki = tmp_path / "wiki"
         wiki.mkdir(parents=True)
         _make_file(wiki / "test.md", {"title": "Test"})
-        issues = check_links(str(tmp_path / "wiki"), str(tmp_path / "raw"))
+        issues = check_links()
         assert issues == []
 
     def test_excludes_claude_dir(self, tmp_path, monkeypatch):
@@ -80,7 +80,7 @@ class TestCheckLinks:
         claude.mkdir(parents=True)
         fm = {"title": "Test", "links": [{"target": "[Missing](wiki/nonexistent.md)", "type": "Related"}]}
         _make_file(claude / "test.md", fm)
-        issues = check_links(str(tmp_path / "wiki"), str(tmp_path / "raw"))
+        issues = check_links()
         assert issues == []
 
 

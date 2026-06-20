@@ -347,6 +347,9 @@ def migrate_source_field(filepath: str, dry_run: bool = False) -> tuple[str, str
         return "unchanged", "Already migrated"
 
     return "migrated", f"source → IngestedFrom [{name}]({raw_path})"
+
+
+def run_validate(paths: list[str] | None = None) -> dict[str, set[str]]:
     """Run validate.py and capture results.
 
     Args:
