@@ -1,5 +1,5 @@
 ---
-title: "feat: Orphan Content Checker"
+title: 'feat: Orphan Content Checker'
 type: feat
 status: deferred
 date: 2026-06-18

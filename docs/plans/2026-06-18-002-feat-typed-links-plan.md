@@ -1,5 +1,5 @@
 ---
-title: "feat: Typed Links"
+title: 'feat: Typed Links'
 type: feat
 status: deferred
 date: 2026-06-18

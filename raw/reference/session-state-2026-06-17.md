@@ -1,10 +1,13 @@
 ---
-title: "Session State — 2026-06-17"
-source_url: "n/a"
+title: "Session State \u2014 2026-06-17"
+source_url: n/a
 date_farmed: 2026-06-17
 category: reference
-description: "Current project state, key decisions, and what's next. Updated at end of each session."
-tags: [session-state, meta]
+description: Current project state, key decisions, and what's next. Updated at end
+  of each session.
+tags:
+- session-state
+- meta
 ---
 
 ## What Knap Is

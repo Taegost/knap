@@ -1,6 +1,6 @@
 ---
-source: "[skill-identification.md](../raw/prompts/skill-identification.md)"
-date_ingested: "2026-06-19"
+source: '[skill-identification.md](../raw/prompts/skill-identification.md)'
+date_ingested: '2026-06-19'
 ---
 
 # Skill Identification Prompt

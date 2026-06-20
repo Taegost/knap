@@ -1,9 +1,10 @@
 ---
-title: "Skill Identification Prompt"
-source_url: "n/a"
+title: Skill Identification Prompt
+source_url: n/a
 date_farmed: 2026-06-17
 category: prompt
-description: "Prompt to identify skills, scripts, and documents that should be created or updated based on recent work"
+description: Prompt to identify skills, scripts, and documents that should be created
+  or updated based on recent work
 ---
 
 ## Prompt
