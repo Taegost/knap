@@ -1,5 +1,5 @@
 ---
-title: "Session State Ingestion and Tags Field"
+title: Session State Ingestion and Tags Field
 type: brainstorm
 status: open
 date: 2026-06-18

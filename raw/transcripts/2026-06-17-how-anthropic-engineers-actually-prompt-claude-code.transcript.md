@@ -1,10 +1,10 @@
 ---
-title: "How Anthropic Engineers ACTUALLY Prompt Claude Code"
-source_url: "https://www.youtube.com/watch?v=qOvc9IUKEIc"
+title: How Anthropic Engineers ACTUALLY Prompt Claude Code
+source_url: https://www.youtube.com/watch?v=qOvc9IUKEIc
 date_farmed: 2026-06-17
 category: transcript
-channel: "Austin Marchese"
-format: "YouTube video transcript"
+channel: Austin Marchese
+format: YouTube video transcript
 ---
 
 [0:00] I listened to Anthropic's engineers at

@@ -1,5 +1,5 @@
 ---
-title: "chore: CWD-Relative Path Resolution"
+title: 'chore: CWD-Relative Path Resolution'
 type: chore
 status: completed
 date: 2026-06-18

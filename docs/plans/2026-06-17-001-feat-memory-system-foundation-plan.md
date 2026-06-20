@@ -1,5 +1,5 @@
 ---
-title: "feat: Memory System Foundation"
+title: 'feat: Memory System Foundation'
 type: feat
 status: completed
 date: 2026-06-17

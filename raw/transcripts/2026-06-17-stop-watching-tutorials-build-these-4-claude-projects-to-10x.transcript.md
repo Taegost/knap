@@ -1,10 +1,10 @@
 ---
-title: "Stop Watching Tutorials - Build These 4 Claude Projects to 10x Output"
-source_url: "https://www.youtube.com/watch?v=IiZ5HRaeX4s"
+title: Stop Watching Tutorials - Build These 4 Claude Projects to 10x Output
+source_url: https://www.youtube.com/watch?v=IiZ5HRaeX4s
 date_farmed: 2026-06-17
 category: transcript
-channel: "Austin Marchese"
-format: "YouTube video transcript"
+channel: Austin Marchese
+format: YouTube video transcript
 ---
 
 [0:00] Project number one is your own board of

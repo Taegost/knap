@@ -1,5 +1,5 @@
 ---
-title: "feat: Migration to .knap/ Directory"
+title: 'feat: Migration to .knap/ Directory'
 type: feat
 status: completed
 date: 2026-06-18

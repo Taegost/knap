@@ -1,5 +1,5 @@
 ---
-title: "feat: Plan Lint"
+title: 'feat: Plan Lint'
 type: feat
 status: deferred
 date: 2026-06-18

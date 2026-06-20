@@ -1,5 +1,5 @@
 ---
-title: "security: Gitignore and Secret Scanning Remediation"
+title: 'security: Gitignore and Secret Scanning Remediation'
 type: fix
 status: completed
 date: 2026-06-18
