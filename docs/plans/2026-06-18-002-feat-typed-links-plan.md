@@ -1,7 +1,7 @@
 ---
 title: 'feat: Typed Links'
 type: feat
-status: active
+status: completed
 date: 2026-06-18
 origin: docs/plans/2026-06-17-001-feat-memory-system-foundation-plan.md
 ---
