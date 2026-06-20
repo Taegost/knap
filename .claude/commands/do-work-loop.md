@@ -1,0 +1,3 @@
+Run /ce-work $ARGUMENTS. When it finishes, run /knap-verify-implementation. If /knap-verify-implementation reports PARTIAL or FAIL, run /ce-work $ARGUMENTS again to address them, then run /knap-verify-implementation again. Continue this cycle until /knap-verify-implementation reports PASS.
+
+When verification passes, update the plan file's frontmatter `status` field from `active` to `completed`, then commit and push. Summarize what was done.
