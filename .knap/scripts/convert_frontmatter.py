@@ -47,7 +47,7 @@ import argparse
 import os
 import sys
 import tempfile
-from datetime import date as date_type, datetime
+from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -338,8 +338,8 @@ Examples:
 
     args = parser.parse_args()
 
-    # Get repo root (parent of .knap/scripts/)
-    repo_root = Path(__file__).resolve().parents[2]
+    # Get repo root (CWD-relative, per conventions.md)
+    repo_root = Path(".")
 
     # Run baseline validation if requested
     baseline_pass = set()
