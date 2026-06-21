@@ -1,7 +1,7 @@
 ---
 title: 'chore: Config File Defaults and Template Framework'
 type: chore
-status: active
+status: completed
 date: 2026-06-20
 ---
 

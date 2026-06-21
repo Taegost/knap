@@ -4,16 +4,25 @@ Reads from schema/categories.yaml. Import this module from other scripts
 instead of hardcoding category definitions.
 """
 
-import yaml
 from pathlib import Path
 
+import yaml
+
+from load_config import load_config
+
 _SCHEMA_PATH = Path(".knap/schema/categories.yaml")
+_TEMPLATE_PATH = Path(".knap/schema/templates/categories.yaml.template")
 
 
 def _load_schema() -> dict:
-    """Load schema from categories.yaml."""
-    with open(_SCHEMA_PATH) as f:
-        return yaml.safe_load(f)
+    """Load schema from categories.yaml, auto-creating from template if missing."""
+    try:
+        return load_config(_SCHEMA_PATH, _TEMPLATE_PATH)
+    except RuntimeError as e:
+        raise RuntimeError(
+            f"Cannot load schema: {e}. "
+            "Ensure the .knap/schema/templates/ directory exists."
+        ) from e
 
 
 def _save_schema(data: dict) -> None:

@@ -14,12 +14,15 @@ def _setup_repo(tmp_path):
     """Create minimal repo structure with folders.yaml."""
     schema_dir = tmp_path / ".knap" / "schema"
     schema_dir.mkdir(parents=True)
+    templates_dir = schema_dir / "templates"
+    templates_dir.mkdir()
     config = {
         "working": ["wiki/"],
         "system": [".knap/"],
         "excluded": [".git", ".venv"],
     }
     (schema_dir / "folders.yaml").write_text(yaml.dump(config))
+    (templates_dir / "folders.yaml.template").write_text(yaml.dump(config))
 
 
 def _make_file(path: Path, fm: dict, body: str = "\n# Test\n"):

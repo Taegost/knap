@@ -20,9 +20,19 @@ def _setup_repo(tmp_path):
     """Set up minimal repo structure with schema for CWD-relative imports."""
     knap_dir = tmp_path / ".knap" / "schema"
     knap_dir.mkdir(parents=True)
+    templates_dir = knap_dir / "templates"
+    templates_dir.mkdir()
     shutil.copy(
         Path(__file__).resolve().parent.parent / "schema" / "categories.yaml",
         knap_dir / "categories.yaml",
+    )
+    shutil.copy(
+        Path(__file__).resolve().parent.parent / "schema" / "templates" / "categories.yaml.template",
+        templates_dir / "categories.yaml.template",
+    )
+    shutil.copy(
+        Path(__file__).resolve().parent.parent / "schema" / "templates" / "folders.yaml.template",
+        templates_dir / "folders.yaml.template",
     )
 
 

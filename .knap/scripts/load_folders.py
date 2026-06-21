@@ -10,42 +10,21 @@ Usage:
 
 from pathlib import Path
 
-import yaml
+from load_config import load_config
 
 _FOLDERS_PATH = Path(".knap/schema/folders.yaml")
-
-_DEFAULTS = {
-    "working": ["wiki/"],
-    "system": [".knap/"],
-    "excluded": [
-        ".claude",
-        ".venv",
-        ".git",
-        "__pycache__",
-        "docs/brainstorms",
-        "docs/plans",
-    ],
-}
+_TEMPLATE_PATH = Path(".knap/schema/templates/folders.yaml.template")
 
 
-def _load_config() -> dict:
-    """Load folders.yaml, returning defaults if missing or empty."""
-    try:
-        with open(_FOLDERS_PATH) as f:
-            data = yaml.safe_load(f)
-        if not isinstance(data, dict):
-            return _DEFAULTS
-        return data
-    except FileNotFoundError:
-        return _DEFAULTS
-    except Exception:
-        return _DEFAULTS
+def _load_folders_config() -> dict:
+    """Load folders.yaml, auto-creating from template if missing."""
+    return load_config(_FOLDERS_PATH, _TEMPLATE_PATH)
 
 
 def _get_folders(key: str) -> list[Path]:
     """Get folder list for a given key, returning Path objects."""
-    config = _load_config()
-    raw = config.get(key, _DEFAULTS.get(key, []))
+    config = _load_folders_config()
+    raw = config.get(key, [])
     return [Path(p) for p in raw]
 
 
