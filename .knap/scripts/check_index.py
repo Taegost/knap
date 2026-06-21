@@ -66,9 +66,11 @@ def check_index() -> list[str]:
             continue
 
         # Check entries in category index match actual pages (I3)
-        content = cat_index.read_text()
+        # Parse body only — frontmatter may contain Parent links that are not index entries
+        parsed = ParsedFile(str(cat_index))
+        body = parsed.body if not parsed.error else cat_index.read_text()
         index_entries: set[str] = set()
-        for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
+        for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', body):
             index_entries.add(m.group(2))
 
         actual_pages: set[str] = set()
@@ -83,14 +85,16 @@ def check_index() -> list[str]:
             issues.append(f"index missing: {cat_name}/{page}")
 
     # Check master index links to category indexes (I4)
-    master_content = master_index.read_text()
+    # Parse body only — frontmatter may contain Parent links that are not index entries
+    master_parsed = ParsedFile(str(master_index))
+    master_body = master_parsed.body if not master_parsed.error else master_index.read_text()
     for cat_dir in sorted(wiki_path.iterdir()):
         if not cat_dir.is_dir():
             continue
         cat_index = cat_dir / "index.md"
         if cat_index.exists():
             cat_link = f"{cat_dir.name}/index.md"
-            if cat_link not in master_content:
+            if cat_link not in master_body:
                 issues.append(f"master index missing link to: {cat_link}")
 
     # Check Parent link requirement for files in indexed categories (I6)

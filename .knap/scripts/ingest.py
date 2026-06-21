@@ -146,45 +146,29 @@ def raw_to_wiki_path(raw_path: str) -> str:
     return str(Path(*parts))
 
 
-def _update_category_index(category: str, wiki_path: str, title: str) -> None:
-    """Update wiki/{category}/index.md with a page entry."""
-    # Use the actual directory from the wiki path for the category index
-    # This handles cases where the category name differs from the directory name
+def _ensure_category_index(category: str, wiki_path: str) -> None:
+    """Ensure wiki/{category}/index.md exists with frontmatter.
+
+    Creates the index file with Parent link and description if missing.
+    Does NOT add page entries — that's handled by add_frontmatter_link()
+    reciprocity when the Parent link is added to the wiki page.
+    """
     wiki_parent = Path(wiki_path).parent
     cat_index = wiki_parent / "index.md"
 
-    # Create category index if it doesn't exist
-    if not cat_index.exists():
-        wiki_parent.mkdir(parents=True, exist_ok=True)
-        # Include frontmatter with Parent link and description
-        fm = {
-            "links": [{"target": "[wiki index](wiki/index.md)", "type": "Parent"}],
-            "description": f"Catalog of {category} pages.",
-        }
-        yaml_str = yaml.dump(fm, default_flow_style=False, sort_keys=False).rstrip()
-        cat_index.write_text(
-            f"---\n{yaml_str}---\n\n# {category.title()}\n\nCatalog of {category} pages.\n\n"
-        )
+    if cat_index.exists():
+        return
 
-    lines = cat_index.read_text().splitlines()
-
-    # Build relative path from category index directory to wiki page
-    rel_path = Path(wiki_path).name
-    entry = f"- [{title}]({rel_path})"
-
-    # Check for duplicate
-    for line in lines:
-        if entry in line:
-            print(f"  {wiki_parent.name}/index.md: entry already exists for {title}")
-            return
-
-    # Append entry at end
-    if not lines[-1].strip() == "":
-        lines.append("")
-    lines.append(entry)
-
-    cat_index.write_text("\n".join(lines) + "\n")
-    print(f"  {wiki_parent.name}/index.md: added {title}")
+    wiki_parent.mkdir(parents=True, exist_ok=True)
+    fm = {
+        "links": [{"target": "[wiki index](wiki/index.md)", "type": "Parent"}],
+        "description": f"Catalog of {category} pages.",
+    }
+    yaml_str = yaml.dump(fm, default_flow_style=False, sort_keys=False).rstrip()
+    cat_index.write_text(
+        f"---\n{yaml_str}---\n\n# {category.title()}\n\nCatalog of {category} pages.\n\n"
+    )
+    print(f"  {wiki_parent.name}/index.md: created")
 
 
 def _update_master_index(category: str, wiki_path: str) -> None:
@@ -213,7 +197,7 @@ def _update_master_index(category: str, wiki_path: str) -> None:
 
 def update_index(category: str, wiki_path: str, title: str) -> None:
     """Update both category index and master index."""
-    _update_category_index(category, wiki_path, title)
+    _ensure_category_index(category, wiki_path)
     _update_master_index(category, wiki_path)
 
 
@@ -267,6 +251,13 @@ def ingest(raw_path: str, *, dry_run: bool = False, force: bool = False) -> bool
     print(f"  created: {wiki_path}")
 
     update_index(category, wiki_path, title)
+
+    # Add Parent link to wiki page — triggers index body update via reciprocity
+    from add_frontmatter_link import add_frontmatter_link
+    cat_index = wiki.parent / "index.md"
+    parent_link = f"[index]({cat_index})"
+    add_frontmatter_link(wiki_path, parent_link, "Parent")
+
     append_log(str(raw), wiki_path, title)
     return True
 

@@ -48,10 +48,15 @@ def _is_index_file(path: Path) -> bool:
 
 
 def _get_index_entries(index_path: Path) -> set[str]:
-    """Extract all link targets from an index file's body."""
-    content = index_path.read_text()
+    """Extract all link targets from an index file's body.
+
+    Parses body only — frontmatter may contain Parent links that are not
+    index entries.
+    """
+    parsed = ParsedFile(str(index_path))
+    body = parsed.body if not parsed.error else index_path.read_text()
     entries: set[str] = set()
-    for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
+    for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', body):
         entries.add(m.group(2))
     return entries
 
