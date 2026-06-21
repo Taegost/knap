@@ -59,6 +59,18 @@ links:
 
 **Entry point:** All scripts that add frontmatter links must use `add_frontmatter_link()`. It handles deduplication, type updates, and reciprocal link generation.
 
+## Index Files
+
+Index files (`wiki/{category}/index.md`, `wiki/index.md`, `.knap/ROUTER.md`) are wiki pages with special behavior:
+
+**Frontmatter:** Every index file has frontmatter with:
+- `Parent` link to its parent index (category → `wiki/index.md`, master → `.knap/ROUTER.md`, ROUTER has no parent)
+- `description` field summarizing the index contents
+
+**Child links in body:** Child links on indexes live in the body as simple title links (`- [Title](filename.md)`), not in frontmatter. This is the sole exception to the "all system-related links are in frontmatter" rule.
+
+**Parent link convention:** Every wiki page has a `Parent` link in its frontmatter pointing to its category index. When `add_frontmatter_link()` adds a `Parent` link where the target is an index file, it adds the page to the index body instead of creating a Child frontmatter reciprocal.
+
 ## Serialization
 
 Frontmatter serialization uses `yaml.dump(data, default_flow_style=False, sort_keys=False)`. This follows the patterns from the markdown-first converter plan. Manual string formatting is not used — it breaks on dict-in-list structures like `links`.

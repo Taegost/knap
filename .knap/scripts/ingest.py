@@ -156,7 +156,15 @@ def _update_category_index(category: str, wiki_path: str, title: str) -> None:
     # Create category index if it doesn't exist
     if not cat_index.exists():
         wiki_parent.mkdir(parents=True, exist_ok=True)
-        cat_index.write_text(f"# {category.title()}\n\nCatalog of {category} pages.\n\n")
+        # Include frontmatter with Parent link and description
+        fm = {
+            "links": [{"target": "[wiki index](wiki/index.md)", "type": "Parent"}],
+            "description": f"Catalog of {category} pages.",
+        }
+        yaml_str = yaml.dump(fm, default_flow_style=False, sort_keys=False).rstrip()
+        cat_index.write_text(
+            f"---\n{yaml_str}---\n\n# {category.title()}\n\nCatalog of {category} pages.\n\n"
+        )
 
     lines = cat_index.read_text().splitlines()
 

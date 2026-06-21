@@ -105,13 +105,13 @@ class TestAddFrontmatterLink:
         data = yaml.safe_load((tmp_path / "target.md").read_text().split("---")[1])
         assert any(l["type"] == "IngestedTo" for l in data["links"])
 
-    def test_no_child_reciprocal_for_index_file(self, tmp_path, monkeypatch):
-        """Adding Parent link to index.md does NOT generate Child reciprocal."""
+    def test_parent_link_to_index_adds_body_entry(self, tmp_path, monkeypatch):
+        """Adding Parent link to index.md adds page to index body, not Child reciprocal."""
         monkeypatch.chdir(tmp_path)
         wiki_dir = tmp_path / "wiki" / "transcripts"
         wiki_dir.mkdir(parents=True)
         source = _make_file(wiki_dir / "page.md", {"title": "Page"})
-        _make_file(wiki_dir / "index.md", {"title": "Index"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"}, "\n# Index\n")
         add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Parent")
         # Source should have Parent link
         data = yaml.safe_load((wiki_dir / "page.md").read_text().split("---")[1])
@@ -120,21 +120,89 @@ class TestAddFrontmatterLink:
         data2 = yaml.safe_load((wiki_dir / "index.md").read_text().split("---")[1])
         links = data2.get("links", [])
         assert not any(l.get("type") == "Child" for l in links)
+        # Index body should contain the page entry
+        body = (wiki_dir / "index.md").read_text()
+        assert "- [Page](page.md)" in body
 
-    def test_no_child_reciprocal_for_router_file(self, tmp_path, monkeypatch):
-        """Adding Parent link to ROUTER.md does NOT generate Child reciprocal."""
+    def test_parent_link_to_router_adds_body_entry(self, tmp_path, monkeypatch):
+        """Adding Parent link to ROUTER.md adds page to ROUTER body, not Child reciprocal."""
         monkeypatch.chdir(tmp_path)
         knap_dir = tmp_path / ".knap"
         knap_dir.mkdir(parents=True)
         wiki_dir = tmp_path / "wiki"
         wiki_dir.mkdir(parents=True)
         source = _make_file(wiki_dir / "page.md", {"title": "Page"})
-        _make_file(knap_dir / "ROUTER.md", {"title": "Router"})
+        _make_file(knap_dir / "ROUTER.md", {"title": "Router"}, "\n# Router\n")
         add_frontmatter_link(source, "[Router](.knap/ROUTER.md)", "Parent")
         # Index should NOT have Child reciprocal
         data = yaml.safe_load((knap_dir / "ROUTER.md").read_text().split("---")[1])
         links = data.get("links", [])
         assert not any(l.get("type") == "Child" for l in links)
+        # ROUTER body should contain the page entry
+        body = (knap_dir / "ROUTER.md").read_text()
+        assert "- [Page](../wiki/page.md)" in body
+
+    def test_index_body_entry_uses_title_from_frontmatter(self, tmp_path, monkeypatch):
+        """Index body entry uses page title from frontmatter."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "my-page.md", {"title": "My Custom Title"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"}, "\n# Index\n")
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Parent")
+        body = (wiki_dir / "index.md").read_text()
+        assert "- [My Custom Title](my-page.md)" in body
+
+    def test_index_body_entry_falls_back_to_filename(self, tmp_path, monkeypatch):
+        """Index body entry uses filename stem when title is missing."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "my-page.md", {})
+        _make_file(wiki_dir / "index.md", {"title": "Index"}, "\n# Index\n")
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Parent")
+        body = (wiki_dir / "index.md").read_text()
+        assert "- [my-page](my-page.md)" in body
+
+    def test_no_duplicate_index_body_entry(self, tmp_path, monkeypatch):
+        """Page already listed in index body does not get a duplicate entry."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "page.md", {"title": "Page"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"}, "\n# Index\n- [Page](page.md)\n")
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Parent")
+        body = (wiki_dir / "index.md").read_text()
+        assert body.count("- [Page](page.md)") == 1
+
+    def test_related_link_to_index_no_reciprocal(self, tmp_path, monkeypatch):
+        """Adding Related link to index file has no reciprocal (Related has no pair)."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "page.md", {"title": "Page"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"})
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Related")
+        # Source should have the link
+        data = yaml.safe_load((wiki_dir / "page.md").read_text().split("---")[1])
+        assert any(l["type"] == "Related" for l in data["links"])
+        # Index should NOT have a reciprocal (Related has no pair)
+        data2 = yaml.safe_load((wiki_dir / "index.md").read_text().split("---")[1])
+        links = data2.get("links", [])
+        assert len(links) == 0
+
+    def test_parent_link_to_master_index_adds_body_entry(self, tmp_path, monkeypatch):
+        """Adding Parent link to wiki/index.md adds page to master index body."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki"
+        wiki_dir.mkdir(parents=True)
+        cat_dir = wiki_dir / "transcripts"
+        cat_dir.mkdir()
+        source = _make_file(cat_dir / "page.md", {"title": "Page"})
+        _make_file(wiki_dir / "index.md", {"title": "Wiki Index"}, "\n# Wiki Index\n")
+        add_frontmatter_link(source, "[Wiki Index](wiki/index.md)", "Parent")
+        body = (wiki_dir / "index.md").read_text()
+        assert "- [Page](transcripts/page.md)" in body
 
     def test_supersedes_reciprocal_still_works_for_index(self, tmp_path, monkeypatch):
         """Adding Supersedes link to index file still generates reciprocal (only Child is exempt)."""
