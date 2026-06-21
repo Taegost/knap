@@ -75,7 +75,7 @@ def find_orphans() -> list[str]:
         for wikilink in extract_wikilinks(parsed.body):
             resolved = resolve_wikilink(wikilink, str(f))
             if resolved:
-                incoming.add(str(resolved))
+                incoming.add(str(resolved.resolve()))
 
     # Also add all index files as "linked" — they are structural
     for f in all_files:

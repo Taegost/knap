@@ -17,26 +17,7 @@ import yaml
 
 from schema import LINK_TYPE_PAIRS
 from check_links import check_link
-
-
-def _parse_frontmatter(filepath: str) -> tuple[dict | None, str | None, str]:
-    """Extract YAML frontmatter. Returns (data, error, body)."""
-    with open(filepath) as f:
-        content = f.read()
-    if not content.startswith("---"):
-        return None, "Missing frontmatter (---)", ""
-    end = content.find("---", 3)
-    if end == -1:
-        return None, "Unclosed frontmatter", ""
-    yaml_str = content[3:end]
-    body = content[end + 3:]
-    try:
-        data = yaml.safe_load(yaml_str)
-        if not isinstance(data, dict):
-            return None, "Frontmatter is not a mapping", body
-        return data, None, body
-    except yaml.YAMLError as e:
-        return None, f"YAML error: {e}", body
+from parse_frontmatter import ParsedFile
 
 
 def _write_frontmatter_link(filepath: str, link: str, link_type: str) -> bool:
@@ -44,10 +25,12 @@ def _write_frontmatter_link(filepath: str, link: str, link_type: str) -> bool:
 
     Returns True if the file was modified.
     """
-    data, error, body = _parse_frontmatter(filepath)
-    if error or data is None:
-        print(f"  ✗ {filepath}: {error}", file=sys.stderr)
+    parsed = ParsedFile(filepath)
+    if parsed.error or parsed.frontmatter is None:
+        print(f"  ✗ {filepath}: {parsed.error}", file=sys.stderr)
         return False
+    data = parsed.frontmatter
+    body = parsed.body
 
     links = data.get("links", [])
     if not isinstance(links, list):
@@ -74,7 +57,7 @@ def _write_frontmatter_link(filepath: str, link: str, link_type: str) -> bool:
 
     # Serialize and write
     new_yaml = yaml.dump(data, default_flow_style=False, sort_keys=False)
-    new_content = f"---\n{new_yaml}---{body}"
+    new_content = f"---\n{new_yaml}---\n{body}"
 
     with open(filepath, "w") as f:
         f.write(new_content)

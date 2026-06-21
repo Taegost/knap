@@ -22,8 +22,9 @@ from pathlib import Path
 import yaml
 
 from schema import REQUIRED_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES
-from check_links import check_link as _check_link
+from check_links import check_link as _check_link, extract_wikilinks, resolve_wikilink
 from parse_frontmatter import ParsedFile
+from load_folders import get_excluded_folders
 from check_index import check_index as _check_index
 from find_orphans import find_orphans as _find_orphans
 
@@ -44,13 +45,13 @@ def check_links() -> list[str]:
     Body link failures are warnings (informational).
     """
     issues = []
-    skip_dirs = {".claude", ".venv", ".git", "__pycache__"}
+    excluded = {str(p) for p in get_excluded_folders()}
     repo_root = Path.cwd()
 
     for md in sorted(repo_root.rglob("*.md")):
-        # Skip non-content directories
+        # Skip excluded directories
         parts = md.relative_to(repo_root).parts
-        if any(p in skip_dirs for p in parts):
+        if any(p in excluded for p in parts):
             continue
 
         try:
@@ -95,6 +96,12 @@ def check_links() -> list[str]:
             result = _check_link(target, relative_to=str(md))
             if not result.exists:
                 issues.append(f"warning: {rel_path} — broken body link: {target}")
+
+        # Check wikilinks
+        for wikilink in extract_wikilinks(body):
+            resolved = resolve_wikilink(wikilink, rel_path)
+            if resolved is None:
+                issues.append(f"warning: {rel_path} — broken wikilink: [[{wikilink}]]")
 
     return issues
 
