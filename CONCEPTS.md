@@ -8,7 +8,7 @@ Shared domain vocabulary for this project — entities, named processes, and sta
 
 **Wiki page** — LLM-maintained page with auto-generated stubs from frontmatter plus LLM-written analysis sections (Summary, Analysis). Lives under `wiki/{category}/`. Every raw file should have a corresponding wiki page after ingestion.
 
-**Index file** — A file (typically `index.md` or `ROUTER.md`) that lists and links to the pages in its directory. Category indexes list pages in their body; the master index links to category indexes. Index files are exempt from the Parent/Child reciprocity rule — they list children in their body, not frontmatter.
+**Index file** — A file (typically `index.md` or `ROUTER.md`) that lists and links to the pages in its directory. Category indexes list pages in their body; the master index links to category indexes. Index files have frontmatter (Parent link to their containing index, description field). The sole deviation from frontmatter-based links: Child links live in the body as simple title links, not in frontmatter. When `add_frontmatter_link()` writes a Parent link targeting an index, it adds the page to the index body automatically.
 
 ## Link Concepts
 
