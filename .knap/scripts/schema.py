@@ -48,11 +48,49 @@ ANALYSIS_SECTION: dict[str, tuple[str, str]] = {
     for cat, meta in CATEGORIES.items()
 }
 
+# Base link types — extensible via categories.yaml link_types key
+_BASE_LINK_TYPES = [
+    "Related",
+    "Parent", "Child",
+    "Supersedes", "SupersededBy",
+    "IngestedFrom", "IngestedTo",
+    "SynthesizedFrom", "SynthesizedTo",
+]
+
+# Bidirectional pair mapping
+_LINK_TYPE_PAIRS: dict[str, str] = {
+    "Parent": "Child",
+    "Child": "Parent",
+    "Supersedes": "SupersededBy",
+    "SupersededBy": "Supersedes",
+    "IngestedFrom": "IngestedTo",
+    "IngestedTo": "IngestedFrom",
+    "SynthesizedFrom": "SynthesizedTo",
+    "SynthesizedTo": "SynthesizedFrom",
+}
+
+
+def _build_link_types() -> list[str]:
+    """Build full link type list from base types + categories.yaml extensions."""
+    extra = _schema.get("link_types", [])
+    seen = set()
+    types = []
+    for t in _BASE_LINK_TYPES + extra:
+        if t not in seen:
+            seen.add(t)
+            types.append(t)
+    return types
+
+
+LINK_TYPES: list[str] = _build_link_types()
+LINK_TYPE_PAIRS: dict[str, str] = dict(_LINK_TYPE_PAIRS)
+
 
 def reload() -> None:
     """Reload schema from disk. Call after editing categories.yaml."""
     global _schema, REQUIRED_FIELDS, OPTIONAL_FIELDS, CATEGORIES
     global VALID_CATEGORIES, CATEGORY_FIELDS, ANALYSIS_SECTION
+    global LINK_TYPES, LINK_TYPE_PAIRS
     _schema = _load_schema()
     REQUIRED_FIELDS = _schema.get("required_fields", REQUIRED_FIELDS)
     OPTIONAL_FIELDS = _schema.get("optional_fields", OPTIONAL_FIELDS)
@@ -63,3 +101,5 @@ def reload() -> None:
         cat: (meta.get("analysis_label", "Notes"), meta.get("analysis_todo", "<!-- TODO -->"))
         for cat, meta in CATEGORIES.items()
     }
+    LINK_TYPES = _build_link_types()
+    LINK_TYPE_PAIRS = dict(_LINK_TYPE_PAIRS)

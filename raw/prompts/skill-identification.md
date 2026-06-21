@@ -5,6 +5,9 @@ date_farmed: 2026-06-17
 category: prompt
 description: Prompt to identify skills, scripts, and documents that should be created
   or updated based on recent work
+links:
+- target: '[skill-identification](wiki/prompts/skill-identification.md)'
+  type: IngestedTo
 ---
 
 ## Prompt

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from schema import REQUIRED_FIELDS, OPTIONAL_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES
+from schema import REQUIRED_FIELDS, OPTIONAL_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES, LINK_TYPES
 
 
 def parse_frontmatter(filepath: str) -> tuple[dict | None, str | None]:
@@ -65,6 +65,24 @@ def validate_file(filepath: str) -> list[tuple[str, str]]:
     for key in data:
         if key not in known:
             issues.append(("warning", f"unknown field: {key}"))
+
+    # Validate links structure if present
+    links = data.get("links")
+    if links is not None:
+        if not isinstance(links, list):
+            issues.append(("error", "links must be a list"))
+        else:
+            for i, entry in enumerate(links):
+                if not isinstance(entry, dict):
+                    issues.append(("error", f"links[{i}] must be a dict"))
+                    continue
+                if "target" not in entry:
+                    issues.append(("error", f"links[{i}] missing required key: target"))
+                elif not isinstance(entry["target"], str):
+                    issues.append(("error", f"links[{i}].target must be a string"))
+                link_type = entry.get("type")
+                if link_type is not None and link_type != "" and link_type not in LINK_TYPES:
+                    issues.append(("error", f"links[{i}].type '{link_type}' invalid — valid: {', '.join(LINK_TYPES)}"))
 
     return issues
 

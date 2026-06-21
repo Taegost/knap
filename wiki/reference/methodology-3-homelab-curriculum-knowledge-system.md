@@ -1,3 +1,8 @@
+---
+title: "Methodology 3: Homelab Curriculum Knowledge System"
+category: reference
+---
+
 # Methodology 3: Homelab Curriculum Knowledge System
 
 Source: `~/_ws/homelab-k8s-curriculum`

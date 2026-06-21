@@ -1,3 +1,8 @@
+---
+title: "Methodology 4: my_pos — Personal Operating System Memory"
+category: reference
+---
+
 # Methodology 4: my_pos — Personal Operating System Memory
 
 Source: `~/_ws/my_pos`

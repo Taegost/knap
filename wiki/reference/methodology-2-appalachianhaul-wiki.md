@@ -1,3 +1,8 @@
+---
+title: "Methodology 2: AppalachianHaul Wiki (Karpathy Pattern Implementation)"
+category: reference
+---
+
 # Methodology 2: AppalachianHaul Wiki (Karpathy Pattern Implementation)
 
 Source: This repository (`~/_ws/wiki-AppalachianHaul`)

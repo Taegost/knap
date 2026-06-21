@@ -2,16 +2,18 @@
 """Lint the wiki for structural issues.
 
 Checks:
-  1. Orphan wiki pages (broken source links)
+  1. Link validation (frontmatter and body links)
   2. Un-ingested raw files (no wiki page)
-  3. Stale wiki pages (raw newer than wiki)
-  4. Index accuracy (entries match real files)
-  5. Frontmatter validation
+  3. Index accuracy (entries match real files)
+  4. Frontmatter validation
+  5. Orphan detection (files with no incoming links)
 
 Usage:
     python3 .knap/scripts/lint.py
+    python3 .knap/scripts/lint.py --skip-orphan-check
 """
 
+import argparse
 import re
 import sys
 from datetime import date
@@ -20,21 +22,11 @@ from pathlib import Path
 import yaml
 
 from schema import REQUIRED_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES
-
-
-def parse_frontmatter(filepath: str) -> dict | None:
-    try:
-        with open(filepath) as f:
-            content = f.read()
-        if not content.startswith("---"):
-            return None
-        end = content.find("---", 3)
-        if end == -1:
-            return None
-        data = yaml.safe_load(content[3:end])
-        return data if isinstance(data, dict) else None
-    except Exception:
-        return None
+from check_links import check_link as _check_link, extract_wikilinks, resolve_wikilink
+from parse_frontmatter import ParsedFile
+from load_folders import get_excluded_folders
+from check_index import check_index as _check_index
+from find_orphans import find_orphans as _find_orphans
 
 
 def raw_to_wiki(raw_path: str, raw_dir: str, wiki_dir: str) -> str:
@@ -46,31 +38,80 @@ def raw_to_wiki(raw_path: str, raw_dir: str, wiki_dir: str) -> str:
     return str(Path(wiki_dir) / rel)
 
 
-def extract_source_link(page_path: str) -> str | None:
-    content = Path(page_path).read_text()
-    if not content.startswith("---"):
-        return None
-    end = content.find("---", 3)
-    if end == -1:
-        return None
-    fm = content[3:end]
-    # source: "[name](../raw/...)" — extract the path
-    m = re.search(r'source:\s*"?\[.*?\]\(\.\./(.+?)\)"?', fm)
-    if m:
-        return m.group(1)
-    return None
+def check_links() -> list[str]:
+    """Validate frontmatter and body links across all markdown files.
 
-
-def check_orphans(wiki_dir: str, raw_dir: str) -> list[str]:
+    Frontmatter internal link failures are errors; external URL failures are warnings.
+    Body link failures are warnings (informational).
+    """
     issues = []
-    for md in sorted(Path(wiki_dir).rglob("*.md")):
-        if md.name in ("index.md", "log.md"):
+    excluded = get_excluded_folders()
+    repo_root = Path.cwd()
+
+    def _is_excluded(path_parts: tuple[str, ...]) -> bool:
+        """Check if path falls under any excluded folder."""
+        for exc in excluded:
+            exc_parts = exc.parts
+            for i in range(len(path_parts) - len(exc_parts) + 1):
+                if path_parts[i : i + len(exc_parts)] == exc_parts:
+                    return True
+        return False
+
+    for md in sorted(repo_root.rglob("*.md")):
+        # Skip excluded directories
+        parts = md.relative_to(repo_root).parts
+        if _is_excluded(parts):
             continue
-        source = extract_source_link(str(md))
-        if source is None:
-            issues.append(f"orphan: {md} — no source link found")
-        elif not Path(source).exists():
-            issues.append(f"orphan: {md} — source {source} does not exist")
+
+        try:
+            content = md.read_text()
+        except Exception:
+            continue
+
+        if not content.startswith("---"):
+            continue
+        end = content.find("---", 3)
+        if end == -1:
+            continue
+
+        fm_yaml = content[3:end]
+        body = content[end + 3:]
+        rel_path = str(md.relative_to(repo_root))
+
+        # Check frontmatter links
+        try:
+            fm = yaml.safe_load(fm_yaml)
+            if isinstance(fm, dict):
+                links = fm.get("links", [])
+                if isinstance(links, list):
+                    for entry in links:
+                        if isinstance(entry, dict) and "target" in entry:
+                            target = entry["target"]
+                            result = _check_link(target)
+                            if not result.exists:
+                                if result.is_external:
+                                    issues.append(f"warning: {rel_path} — external link may be broken: {target}")
+                                else:
+                                    issues.append(f"error: {rel_path} — broken frontmatter link: {target}")
+        except yaml.YAMLError:
+            pass
+
+        # Check body markdown links
+        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', body):
+            target = m.group(2)
+            # Skip anchors and heading links
+            if target.startswith("#"):
+                continue
+            result = _check_link(target, relative_to=str(md))
+            if not result.exists:
+                issues.append(f"warning: {rel_path} — broken body link: {target}")
+
+        # Check wikilinks
+        for wikilink in extract_wikilinks(body):
+            resolved = resolve_wikilink(wikilink, rel_path)
+            if resolved is None:
+                issues.append(f"warning: {rel_path} — broken wikilink: [[{wikilink}]]")
+
     return issues
 
 
@@ -83,68 +124,14 @@ def check_uningested(raw_dir: str, wiki_dir: str) -> list[str]:
     return issues
 
 
-def check_index(wiki_dir: str) -> list[str]:
-    """Check master index links to category indexes, and category indexes are accurate."""
-    issues = []
-    wiki_path = Path(wiki_dir)
-
-    # Check master index exists
-    master_index = wiki_path / "index.md"
-    if not master_index.exists():
-        issues.append(f"missing: {master_index}")
-        return issues
-
-    # Check category indexes
-    for cat_dir in sorted(wiki_path.iterdir()):
-        if not cat_dir.is_dir():
-            continue
-
-        cat_index = cat_dir / "index.md"
-        cat_name = cat_dir.name
-
-        # Check category index exists
-        if not cat_index.exists():
-            # Only require index if category has wiki pages
-            pages = [f for f in cat_dir.glob("*.md") if f.name != "index.md"]
-            if pages:
-                issues.append(f"missing: {cat_index}")
-            continue
-
-        # Check entries in category index match actual pages
-        content = cat_index.read_text()
-        index_entries = set()
-        for m in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
-            index_entries.add(m.group(2))
-
-        actual_pages = set()
-        for md in cat_dir.glob("*.md"):
-            if md.name == "index.md":
-                continue
-            actual_pages.add(md.name)
-
-        for entry in sorted(index_entries - actual_pages):
-            issues.append(f"index ghost: {cat_name}/{entry} listed but does not exist")
-        for page in sorted(actual_pages - index_entries):
-            issues.append(f"index missing: {cat_name}/{page}")
-
-    # Check master index links to category indexes
-    master_content = master_index.read_text()
-    for cat_dir in sorted(wiki_path.iterdir()):
-        if not cat_dir.is_dir():
-            continue
-        cat_index = cat_dir / "index.md"
-        if cat_index.exists():
-            cat_link = f"{cat_dir.name}/index.md"
-            if cat_link not in master_content:
-                issues.append(f"master index missing link to: {cat_link}")
-
-    return issues
-
-
 def check_frontmatter(raw_dir: str) -> list[str]:
     issues = []
     for md in sorted(Path(raw_dir).rglob("*.md")):
-        data = parse_frontmatter(str(md))
+        parsed = ParsedFile(str(md))
+        if parsed.error:
+            issues.append(f"frontmatter: {md} — {parsed.error}")
+            continue
+        data = parsed.frontmatter
         if data is None:
             issues.append(f"frontmatter: {md} — missing or unparseable")
             continue
@@ -167,14 +154,55 @@ def print_check(title: str, issues: list[str]) -> int:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Lint the wiki for structural issues")
+    parser.add_argument(
+        "--skip-orphan-check",
+        action="store_true",
+        help="Skip orphan detection (files with no incoming links)",
+    )
+    args = parser.parse_args()
+
     raw_dir = Path("raw").resolve()
     wiki_dir = Path("wiki").resolve()
 
     total = 0
-    total += print_check("Orphan wiki pages", check_orphans(str(wiki_dir), str(raw_dir)))
+    total += print_check("Link validation", check_links())
     total += print_check("Un-ingested raw files", check_uningested(str(raw_dir), str(wiki_dir)))
-    total += print_check("Index accuracy", check_index(str(wiki_dir)))
     total += print_check("Frontmatter validation", check_frontmatter(str(raw_dir)))
+    total += print_check("Index accuracy", _check_index())
+
+    # Orphan check (L1: runs after index check)
+    if not args.skip_orphan_check:
+        orphans = _find_orphans()
+        if orphans:
+            print(f"\n## Orphaned files ({len(orphans)})")
+            for o in orphans:
+                print(f"  - {o}")
+
+            if sys.stdin.isatty():
+                # Interactive: present options (L3)
+                print("\nOptions:")
+                print("  1) Go through each orphan individually")
+                print("  2) Defer to planning")
+                print("  3) Ignore and continue")
+                choice = input("\nChoice (1/2/3): ").strip()
+                if choice == "1":
+                    print("  → Individual review not yet implemented. Re-run with --skip-orphan-check.")
+                    total += len(orphans)
+                elif choice == "2":
+                    print("  → Defer to planning. Re-run with --skip-orphan-check to continue.")
+                    total += len(orphans)
+                elif choice == "3":
+                    print("  ⚠ Warning: leaving orphans can cause issues.")
+                    print("  Re-running with --skip-orphan-check...")
+                    # Re-run without orphan check
+                    args.skip_orphan_check = True
+                else:
+                    print("  Invalid choice. Failing.")
+                    total += len(orphans)
+            else:
+                # Non-interactive: fail (L4)
+                total += len(orphans)
 
     print(f"\n── {total} issues total ──")
     sys.exit(0 if total == 0 else 1)

@@ -1,3 +1,8 @@
+---
+title: "Comparison of Memory Methodologies"
+category: reference
+---
+
 # Comparison of Memory Methodologies
 
 A side-by-side analysis of the five memory systems reviewed.

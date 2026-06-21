@@ -1,3 +1,8 @@
+---
+title: "Methodology 1: Karpathy LLM Wiki"
+category: reference
+---
+
 # Methodology 1: Karpathy LLM Wiki
 
 Source: https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f (April 2026)

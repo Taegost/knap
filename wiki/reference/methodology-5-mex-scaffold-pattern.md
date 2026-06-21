@@ -1,3 +1,8 @@
+---
+title: "Methodology 5: mex — Modular Scaffold Pattern"
+category: reference
+---
+
 # Methodology 5: mex — Modular Scaffold Pattern
 
 Source: https://github.com/theDakshJaitly/mex

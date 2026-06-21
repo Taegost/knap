@@ -7,6 +7,16 @@
 - Wiki files: `wiki/{category}/{slug}.md`
 - Examples: `youtube-channel-name.md`, `research-topic.md`
 
+## Folder Classification
+
+Folders are classified in `.knap/schema/folders.yaml`:
+
+- **working** — folders actively used by the user (content lives here). Default: `wiki/`
+- **system** — folders used by the knap system (infrastructure lives here). Default: `.knap/`
+- **excluded** — folders entirely excluded from processing. Default: `.claude`, `.venv`, `.git`, `__pycache__`, `docs/brainstorms`, `docs/plans`
+
+Scripts read this config via `load_folders.py`. Non-system and non-working folders are implicitly excluded.
+
 ## YAML Frontmatter
 
 Every raw and wiki file has YAML frontmatter. Required fields are defined in `.knap/schema/categories.yaml`.
@@ -28,6 +38,31 @@ Standard markdown links: `[Page Name](../path/to/page.md)`
 
 Works in every markdown editor. Relative paths ensure links work regardless of clone location.
 
+**Frontmatter links** use repo-root-relative paths (e.g., `[name](raw/transcripts/file.md)`).
+**Body markdown links** can use either repo-root-relative or file-relative paths — both are valid.
+
+## Frontmatter Links
+
+Wiki and raw files support typed links in frontmatter via the `links` field.
+
+```yaml
+links:
+  - target: "[Other Page](wiki/other-page.md)"
+    type: Related
+  - target: "[Another Page](wiki/another.md)"  # type defaults to Related
+  - target: "[Paper](raw/research/some-paper.pdf)"
+```
+
+**Link types:** `Related` (default), `Parent`/`Child`, `Supersedes`/`SupersededBy`, `IngestedFrom`/`IngestedTo`, `SynthesizedFrom`/`SynthesizedTo`. Extensible via `categories.yaml` `link_types` key.
+
+**Target format:** `[name](path)` — markdown link format. Paths are repo-root-relative for internal files, full URIs for external resources.
+
+**Entry point:** All scripts that add frontmatter links must use `add_frontmatter_link()`. It handles deduplication, type updates, and reciprocal link generation.
+
+## Serialization
+
+Frontmatter serialization uses `yaml.dump(data, default_flow_style=False, sort_keys=False)`. This follows the patterns from the markdown-first converter plan. Manual string formatting is not used — it breaks on dict-in-list structures like `links`.
+
 ## Raw vs Wiki
 
 - **Raw** = immutable source. The LLM reads but never modifies. Contains the full original content.
@@ -37,7 +72,9 @@ Works in every markdown editor. Relative paths ensure links work regardless of c
 
 ```markdown
 ---
-source: "raw/{category}/{slug}.md"
+links:
+  - target: "[slug.md](raw/{category}/{slug}.md)"
+    type: IngestedFrom
 date_ingested: YYYY-MM-DD
 ---
 
@@ -60,6 +97,16 @@ python3 .knap/scripts/validate.py raw/{category}/
 python3 .knap/scripts/ingest.py raw/{category}/*.md
 python3 .knap/scripts/lint.py
 ```
+
+## Unit Testing
+
+Every script created or modified must have corresponding unit tests. This is a hard requirement.
+
+- **Framework:** pytest
+- **Test files:** colocated in `.knap/scripts/` as `test_<module>.py`
+- **Fixtures:** `tmp_path` for temporary directories, `monkeypatch` for environment control
+- **Setup pattern:** `_setup_repo(tmp_path)` creates `.knap/schema/` and copies `categories.yaml`, then `monkeypatch.chdir(tmp_path)` for CWD-relative testing
+- **Run:** `pytest .knap/scripts/` from repo root
 
 ## Session State
 
