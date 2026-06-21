@@ -105,6 +105,49 @@ class TestAddFrontmatterLink:
         data = yaml.safe_load((tmp_path / "target.md").read_text().split("---")[1])
         assert any(l["type"] == "IngestedTo" for l in data["links"])
 
+    def test_no_child_reciprocal_for_index_file(self, tmp_path, monkeypatch):
+        """Adding Parent link to index.md does NOT generate Child reciprocal."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "page.md", {"title": "Page"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"})
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Parent")
+        # Source should have Parent link
+        data = yaml.safe_load((wiki_dir / "page.md").read_text().split("---")[1])
+        assert any(l["type"] == "Parent" for l in data["links"])
+        # Index should NOT have Child reciprocal
+        data2 = yaml.safe_load((wiki_dir / "index.md").read_text().split("---")[1])
+        links = data2.get("links", [])
+        assert not any(l.get("type") == "Child" for l in links)
+
+    def test_no_child_reciprocal_for_router_file(self, tmp_path, monkeypatch):
+        """Adding Parent link to ROUTER.md does NOT generate Child reciprocal."""
+        monkeypatch.chdir(tmp_path)
+        knap_dir = tmp_path / ".knap"
+        knap_dir.mkdir(parents=True)
+        wiki_dir = tmp_path / "wiki"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "page.md", {"title": "Page"})
+        _make_file(knap_dir / "ROUTER.md", {"title": "Router"})
+        add_frontmatter_link(source, "[Router](.knap/ROUTER.md)", "Parent")
+        # Index should NOT have Child reciprocal
+        data = yaml.safe_load((knap_dir / "ROUTER.md").read_text().split("---")[1])
+        links = data.get("links", [])
+        assert not any(l.get("type") == "Child" for l in links)
+
+    def test_supersedes_reciprocal_still_works_for_index(self, tmp_path, monkeypatch):
+        """Adding Supersedes link to index file still generates reciprocal (only Child is exempt)."""
+        monkeypatch.chdir(tmp_path)
+        wiki_dir = tmp_path / "wiki" / "transcripts"
+        wiki_dir.mkdir(parents=True)
+        source = _make_file(wiki_dir / "page.md", {"title": "Page"})
+        _make_file(wiki_dir / "index.md", {"title": "Index"})
+        add_frontmatter_link(source, "[Index](wiki/transcripts/index.md)", "Supersedes")
+        # Index should have SupersededBy reciprocal (only Child is exempt)
+        data = yaml.safe_load((wiki_dir / "index.md").read_text().split("---")[1])
+        assert any(l["type"] == "SupersededBy" for l in data.get("links", []))
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

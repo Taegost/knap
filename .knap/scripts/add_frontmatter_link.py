@@ -104,6 +104,11 @@ def add_frontmatter_link(filepath: str, link: str, link_type: str) -> None:
         target_path = _extract_url(link)
         target_full = Path.cwd() / target_path
         if target_full.exists() and target_full.suffix == ".md":
+            # Index files (index.md, ROUTER.md) are exempt from Child reciprocity.
+            # They list children in their body, not frontmatter.
+            target_name = target_full.name
+            if reciprocal_type == "Child" and target_name in ("index.md", "ROUTER.md"):
+                return
             # Build reciprocal link pointing back to source file
             source_rel = str(Path(filepath).resolve().relative_to(Path.cwd()))
             source_name = Path(filepath).stem
