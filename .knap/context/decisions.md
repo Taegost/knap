@@ -70,3 +70,31 @@ Key architectural choices and their rationale.
 **Decision:** 4 files — `scope.md`, `conventions.md`, `structure.md`, `decisions.md`
 
 **Rationale:** Covers 80% of projects without over-engineering. Each file has a clear purpose: scope defines what/why, conventions define rules, structure defines layout, decisions records choices.
+
+## Config-Driven Folder Classification
+
+**Decision:** Folder classification (working/system/excluded) defined in `.knap/schema/folders.yaml` rather than hardcoded in scripts.
+
+**Rationale:** Hardcoding violates "single source of truth." Config-driven allows per-repo customization, prevents drift between scripts, and supports extensibility. Scripts create config from template with defaults if file doesn't exist.
+
+## Shared Frontmatter Parsing
+
+**Decision:** Frontmatter parsing extracted into a shared helper module (`parse_frontmatter.py`) used by all scripts.
+
+**Rationale:** Parsing was duplicated across 5 scripts with inconsistent return types. A shared module ensures consistent behavior and reduces maintenance. `ParsedFile` class that reads the file once and exposes `frontmatter` (dict | None), `body` (str), and `error` (str | None) as properties.
+
+## Index Reciprocity Exception
+
+**Decision:** Index files (`index.md`, `ROUTER.md`) are exempt from the reciprocity rule for `Child` links.
+
+**Rationale:** Indexes list children in their body, not frontmatter. Requiring frontmatter `Child` links doubles maintenance burden. `add_frontmatter_link()` skips `Child` reciprocal writes to index files.
+
+## Unit Testing Mandatory
+
+**Decision:** Every script created or modified must have corresponding unit tests using pytest.
+
+**Rationale:** Tests prevent regressions, document expected behavior, and enable confident refactoring. Colocated test files, `_setup_repo(tmp_path)` + `monkeypatch.chdir(tmp_path)` pattern.
+
+---
+
+See [Modular Lint Checker System](../../docs/solutions/architecture-patterns/modular-lint-checker-system.md) for the documented implementation pattern covering these decisions.
