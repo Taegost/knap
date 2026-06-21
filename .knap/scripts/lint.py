@@ -45,13 +45,22 @@ def check_links() -> list[str]:
     Body link failures are warnings (informational).
     """
     issues = []
-    excluded = {str(p) for p in get_excluded_folders()}
+    excluded = get_excluded_folders()
     repo_root = Path.cwd()
+
+    def _is_excluded(path_parts: tuple[str, ...]) -> bool:
+        """Check if path falls under any excluded folder."""
+        for exc in excluded:
+            exc_parts = exc.parts
+            for i in range(len(path_parts) - len(exc_parts) + 1):
+                if path_parts[i : i + len(exc_parts)] == exc_parts:
+                    return True
+        return False
 
     for md in sorted(repo_root.rglob("*.md")):
         # Skip excluded directories
         parts = md.relative_to(repo_root).parts
-        if any(p in excluded for p in parts):
+        if _is_excluded(parts):
             continue
 
         try:
