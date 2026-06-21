@@ -2,10 +2,11 @@
 """Link validation helper.
 
 Provides check_link() for verifying whether a link target exists.
+Provides resolve_wikilink() and extract_wikilinks() for wikilink support.
 Used by lint.py and add_frontmatter_link.py.
 
 Usage:
-    from check_links import check_link
+    from check_links import check_link, resolve_wikilink, extract_wikilinks
     result = check_link("[Page](wiki/transcripts/foo.md)")
     print(result.exists, result.is_external)
 """
@@ -25,6 +26,9 @@ class LinkResult:
 
 # Pattern to extract URL from markdown link format [name](url)
 _MD_LINK_RE = re.compile(r'\[([^\]]*)\]\(([^)]+)\)')
+
+# Pattern to match wikilinks [[...]] (with optional pipe)
+_WIKILINK_RE = re.compile(r'\[\[([^\]]+)\]\]')
 
 # URI schemes that indicate external resources
 _EXTERNAL_SCHEMES = {"http", "https", "ftp", "ftps", "smb", "nfs"}
@@ -66,3 +70,41 @@ def check_link(link: str, relative_to: str | None = None) -> LinkResult:
         target = Path.cwd() / url
 
     return LinkResult(exists=target.exists(), is_external=False)
+
+
+def resolve_wikilink(wikilink: str, source_file: str) -> Path | None:
+    """Resolve a wikilink to an absolute path.
+
+    Wikilinks without pipe: exact filename match with .md extension,
+    searching within the same category folder as source_file.
+    Wikilinks with pipe: extract path portion and resolve as standard link.
+
+    Args:
+        wikilink: The content inside [[...]] (e.g. "Birthday Party" or "path|display").
+        source_file: The file containing the wikilink (repo-root-relative path).
+
+    Returns:
+        Path to the resolved file, or None if not found.
+    """
+    if "|" in wikilink:
+        # Standard link: extract path portion
+        path_part = wikilink.split("|", 1)[0].strip()
+        if not path_part:
+            return None
+        target = Path.cwd() / path_part
+        return target if target.exists() else None
+
+    # No pipe: exact filename match with .md in same category folder
+    source_path = Path(source_file)
+    category_dir = source_path.parent
+    target = Path.cwd() / category_dir / f"{wikilink}.md"
+    return target if target.exists() else None
+
+
+def extract_wikilinks(body: str) -> list[str]:
+    """Extract all wikilinks from body text.
+
+    Returns list of wikilink contents (inside [[...]]).
+    Skips empty wikilinks [[]].
+    """
+    return [m for m in _WIKILINK_RE.findall(body) if m.strip()]
