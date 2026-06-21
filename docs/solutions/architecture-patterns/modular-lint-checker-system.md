@@ -1,6 +1,7 @@
 ---
 title: "Modular Lint Checker System with Shared Utilities"
 date: 2026-06-21
+last_updated: 2026-06-21
 category: docs/solutions/architecture-patterns
 module: knap/scripts
 problem_type: architecture_pattern
@@ -44,9 +45,26 @@ class ParsedFile:
         self.body: str = ""
         self.error: str | None = None
         self._parse()
+
+    @classmethod
+    def from_content(cls, content: str) -> "ParsedFile":
+        """Parse from a content string (no file read). Body is NOT stripped."""
+        instance = cls.__new__(cls)
+        instance.path = None
+        instance.frontmatter = None
+        instance.body = ""
+        instance.error = None
+        instance._parse_content(content, strip_body=False)
+        return instance
 ```
 
 **Why a class:** Reads the file once on instantiation. Properties eliminate return-type confusion. Callers access what they need: `parsed.frontmatter`, `parsed.body`, `parsed.error`. No tuple unpacking, no ignoring unused positions.
+
+**Two construction paths for two use cases:**
+- `ParsedFile(filepath)` — reads from disk, strips leading newlines from body. For scripts that read files.
+- `ParsedFile.from_content(content)` — parses in-memory string, preserves raw body. For scripts that reconstruct files (e.g., round-trip verification in `convert_frontmatter.py`).
+
+**The `strip_body` parameter is load-bearing.** `convert_frontmatter.py` relies on raw body preservation for byte-identical round-trip verification. Stripping leading newlines would make the reconstructed file differ from the original. Both behaviors coexist via `_parse_content(content, strip_body)`.
 
 ### 2. Config-driven folder classification instead of hardcoded skip_dirs
 
@@ -119,7 +137,20 @@ lint.py orchestrates: `check_links()` → `check_frontmatter()` → `check_uning
 
 Wikilinks `[[Birthday Party]]` resolve to `Birthday Party.md` in the same category folder, case-sensitive. Wikilinks with pipe `[[path|display]]` follow standard markdown rules. The resolution checks against the file list already built during traversal — no filesystem globbing needed.
 
-### 6. Index files exempt from Child reciprocity
+### 6. Guard malformed-frontmatter cases in link checking
+
+When `lint.py` checks body links, a file with malformed frontmatter (broken YAML) still has a body that may contain links. The guard pattern:
+
+```python
+parsed = ParsedFile(str(md))
+if not parsed.body and parsed.error:
+    continue  # completely unreadable, skip
+# still check body links on files with frontmatter errors
+```
+
+This skips only files that are completely unreadable (no body AND an error), while still checking body links on files that have valid body content despite frontmatter errors. `ParsedFile` extracts body before YAML parsing, so body is available even when YAML fails.
+
+### 7. Index files exempt from Child reciprocity
 
 Index files (`index.md`, `ROUTER.md`) list children in their body, not frontmatter. When `add_frontmatter_link()` generates reciprocal links, it skips writing `Child` reciprocals to index files:
 
@@ -210,6 +241,6 @@ def main():
 ## Related
 
 - Plan: `docs/plans/2026-06-18-005-feat-orphan-content-checker-plan.md`
-- Deferred: `docs/plans/2026-06-20-001-chore-backport-frontmatter-parser-plan.md` (backport ParsedFile to remaining scripts)
+- Completed: `docs/plans/2026-06-20-001-chore-backport-frontmatter-parser-plan.md` (backport ParsedFile to all remaining scripts — ingest.py, validate.py, convert_frontmatter.py, lint.py)
 - Deferred: `docs/plans/2026-06-20-003-feat-index-auto-fix-plan.md` (auto-fix for unlisted pages)
 - Conventions: `.knap/context/conventions.md` (unit testing requirements, folder classification)
