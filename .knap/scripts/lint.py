@@ -19,8 +19,6 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import yaml
-
 from schema import REQUIRED_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES
 from check_links import check_link as _check_link, extract_wikilinks, resolve_wikilink
 from parse_frontmatter import ParsedFile
@@ -63,41 +61,27 @@ def check_links() -> list[str]:
         if _is_excluded(parts):
             continue
 
-        try:
-            content = md.read_text()
-        except Exception:
-            continue
-
-        if not content.startswith("---"):
-            continue
-        end = content.find("---", 3)
-        if end == -1:
-            continue
-
-        fm_yaml = content[3:end]
-        body = content[end + 3:]
+        parsed = ParsedFile(str(md))
+        if not parsed.body and parsed.error:
+            continue  # file unreadable
         rel_path = str(md.relative_to(repo_root))
 
         # Check frontmatter links
-        try:
-            fm = yaml.safe_load(fm_yaml)
-            if isinstance(fm, dict):
-                links = fm.get("links", [])
-                if isinstance(links, list):
-                    for entry in links:
-                        if isinstance(entry, dict) and "target" in entry:
-                            target = entry["target"]
-                            result = _check_link(target)
-                            if not result.exists:
-                                if result.is_external:
-                                    issues.append(f"warning: {rel_path} — external link may be broken: {target}")
-                                else:
-                                    issues.append(f"error: {rel_path} — broken frontmatter link: {target}")
-        except yaml.YAMLError:
-            pass
+        if parsed.frontmatter:
+            links = parsed.frontmatter.get("links", [])
+            if isinstance(links, list):
+                for entry in links:
+                    if isinstance(entry, dict) and "target" in entry:
+                        target = entry["target"]
+                        result = _check_link(target)
+                        if not result.exists:
+                            if result.is_external:
+                                issues.append(f"warning: {rel_path} — external link may be broken: {target}")
+                            else:
+                                issues.append(f"error: {rel_path} — broken frontmatter link: {target}")
 
         # Check body markdown links
-        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', body):
+        for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', parsed.body):
             target = m.group(2)
             # Skip anchors and heading links
             if target.startswith("#"):
@@ -107,7 +91,7 @@ def check_links() -> list[str]:
                 issues.append(f"warning: {rel_path} — broken body link: {target}")
 
         # Check wikilinks
-        for wikilink in extract_wikilinks(body):
+        for wikilink in extract_wikilinks(parsed.body):
             resolved = resolve_wikilink(wikilink, rel_path)
             if resolved is None:
                 issues.append(f"warning: {rel_path} — broken wikilink: [[{wikilink}]]")

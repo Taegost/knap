@@ -11,31 +11,16 @@ import sys
 from datetime import date as date_type, datetime
 from pathlib import Path
 
-import yaml
+from parse_frontmatter import ParsedFile
 
 from schema import REQUIRED_FIELDS, OPTIONAL_FIELDS, CATEGORY_FIELDS, VALID_CATEGORIES, LINK_TYPES
-
-
-def parse_frontmatter(filepath: str) -> tuple[dict | None, str | None]:
-    """Extract YAML frontmatter. Returns (data, error)."""
-    with open(filepath) as f:
-        content = f.read()
-    if not content.startswith("---"):
-        return None, "Missing frontmatter (---)"
-    end = content.find("---", 3)
-    if end == -1:
-        return None, "Unclosed frontmatter"
-    try:
-        data = yaml.safe_load(content[3:end])
-        return (data if isinstance(data, dict) else None), None
-    except yaml.YAMLError as e:
-        return None, f"YAML error: {e}"
 
 
 def validate_file(filepath: str) -> list[tuple[str, str]]:
     """Validate one raw file. Returns list of (level, message)."""
     issues = []
-    data, error = parse_frontmatter(filepath)
+    parsed = ParsedFile(filepath)
+    data, error = parsed.frontmatter, parsed.error
     if error:
         issues.append(("error", error))
         return issues

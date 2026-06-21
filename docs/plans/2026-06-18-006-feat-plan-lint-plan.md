@@ -1,8 +1,8 @@
 ---
 title: 'feat: Plan Lint'
 type: feat
-status: deferred
-date: 2026-06-18
+status: completed
+date: 2026-06-21
 origin: meta (observed pattern during doc reviews)
 ---
 

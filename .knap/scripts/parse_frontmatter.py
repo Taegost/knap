@@ -36,6 +36,21 @@ class ParsedFile:
         self.error: str | None = None
         self._parse()
 
+    @classmethod
+    def from_content(cls, content: str) -> "ParsedFile":
+        """Parse frontmatter from a content string (no file read).
+
+        Unlike the constructor, body is NOT stripped of leading newlines.
+        Used by scripts that need raw body preservation (e.g., convert_frontmatter.py).
+        """
+        instance = cls.__new__(cls)
+        instance.path = None
+        instance.frontmatter = None
+        instance.body = ""
+        instance.error = None
+        instance._parse_content(content, strip_body=False)
+        return instance
+
     def _parse(self) -> None:
         """Read file once and populate frontmatter, body, error."""
         try:
@@ -47,29 +62,41 @@ class ParsedFile:
             self.error = f"Cannot read {self.path}: {e}"
             return
 
+        self._parse_content(content, strip_body=True)
+
+    def _parse_content(self, content: str, strip_body: bool = True) -> None:
+        """Parse frontmatter from a content string.
+
+        Args:
+            content: Full file content to parse.
+            strip_body: If True, strip leading newlines from body (file-based
+                parsing). If False, preserve raw body (content-string parsing).
+        """
         if not content:
-            self.error = f"Empty file: {self.path}"
+            self.error = "Empty file"
             return
 
         if not content.startswith("---"):
-            self.error = f"Missing frontmatter (---): {self.path}"
+            self.error = "Missing frontmatter (---)"
             return
 
         end = content.find("---", 3)
         if end == -1:
-            self.error = f"Unclosed frontmatter: {self.path}"
+            self.error = "Unclosed frontmatter"
             return
+
+        # Extract body before YAML parsing — body is available even if YAML fails
+        raw_body = content[end + 3:]
+        self.body = raw_body.lstrip("\n") if strip_body else raw_body
 
         try:
             data = yaml.safe_load(content[3:end])
         except yaml.YAMLError as e:
-            self.error = f"YAML error in {self.path}: {e}"
+            self.error = f"YAML error: {e}"
             return
 
         if not isinstance(data, dict):
-            self.error = f"Frontmatter is not a mapping: {self.path}"
+            self.error = "Frontmatter is not a mapping"
             return
 
         self.frontmatter = data
-        # Body is everything after the second --- (skip leading blank lines)
-        self.body = content[end + 3:].lstrip("\n")
