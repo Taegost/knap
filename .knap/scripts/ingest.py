@@ -18,6 +18,8 @@ from pathlib import Path
 
 import yaml
 
+from parse_frontmatter import ParsedFile
+
 from schema import ANALYSIS_SECTION, CATEGORY_FIELDS
 
 WIKI_DIR = "wiki"
@@ -134,18 +136,6 @@ def build_wiki_page(fm: dict, raw_path: str, date_ingested: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def parse_frontmatter(filepath: str) -> dict:
-    with open(filepath) as f:
-        content = f.read()
-    if not content.startswith("---"):
-        raise ValueError(f"{filepath}: missing frontmatter")
-    end = content.find("---", 3)
-    if end == -1:
-        raise ValueError(f"{filepath}: unclosed frontmatter")
-    data = yaml.safe_load(content[3:end])
-    if not isinstance(data, dict):
-        raise ValueError(f"{filepath}: frontmatter is not a mapping")
-    return data
 
 
 def raw_to_wiki_path(raw_path: str) -> str:
@@ -242,11 +232,11 @@ def ingest(raw_path: str, *, dry_run: bool = False, force: bool = False) -> bool
 
     print(f"\n── {raw_path} ──")
 
-    try:
-        fm = parse_frontmatter(str(raw))
-    except (ValueError, yaml.YAMLError) as e:
-        print(f"✗ {e}", file=sys.stderr)
+    parsed = ParsedFile(str(raw))
+    if parsed.error:
+        print(f"✗ {parsed.error}", file=sys.stderr)
         return False
+    fm = parsed.frontmatter
 
     title = fm.get("title", raw.stem)
     category = fm.get("category", "unknown")
