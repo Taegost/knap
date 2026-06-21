@@ -7,6 +7,16 @@
 - Wiki files: `wiki/{category}/{slug}.md`
 - Examples: `youtube-channel-name.md`, `research-topic.md`
 
+## Folder Classification
+
+Folders are classified in `.knap/schema/folders.yaml`:
+
+- **working** — folders actively used by the user (content lives here). Default: `wiki/`
+- **system** — folders used by the knap system (infrastructure lives here). Default: `.knap/`
+- **excluded** — folders entirely excluded from processing. Default: `.claude`, `.venv`, `.git`, `__pycache__`, `docs/brainstorms`, `docs/plans`
+
+Scripts read this config via `load_folders.py`. Non-system and non-working folders are implicitly excluded.
+
 ## YAML Frontmatter
 
 Every raw and wiki file has YAML frontmatter. Required fields are defined in `.knap/schema/categories.yaml`.
@@ -87,6 +97,16 @@ python3 .knap/scripts/validate.py raw/{category}/
 python3 .knap/scripts/ingest.py raw/{category}/*.md
 python3 .knap/scripts/lint.py
 ```
+
+## Unit Testing
+
+Every script created or modified must have corresponding unit tests. This is a hard requirement.
+
+- **Framework:** pytest
+- **Test files:** colocated in `.knap/scripts/` as `test_<module>.py`
+- **Fixtures:** `tmp_path` for temporary directories, `monkeypatch` for environment control
+- **Setup pattern:** `_setup_repo(tmp_path)` creates `.knap/schema/` and copies `categories.yaml`, then `monkeypatch.chdir(tmp_path)` for CWD-relative testing
+- **Run:** `pytest .knap/scripts/` from repo root
 
 ## Session State
 
