@@ -53,6 +53,8 @@ from pathlib import Path
 
 import yaml
 
+from parse_frontmatter import ParsedFile
+
 
 # Directories to skip during file discovery
 SKIP_DIRS = {".venv", ".git", "__pycache__", "node_modules", ".claude", ".pytest_cache"}
@@ -102,38 +104,6 @@ def detect_line_ending(content: str) -> str:
     return "\n"
 
 
-def parse_frontmatter(content: str) -> tuple[dict | None, str | None, str]:
-    """Extract YAML frontmatter from markdown content.
-
-    Uses the same pattern as ingest.py lines 140-151: find --- at start,
-    find next ---, extract YAML between them.
-
-    Args:
-        content: Full file content
-
-    Returns:
-        Tuple of (parsed_data, error_message, body_content)
-        - parsed_data: dict if successful, None if error
-        - error_message: str if error, None if successful
-        - body_content: everything after the closing --- (empty string if error)
-    """
-    if not content.startswith("---"):
-        return None, "Missing frontmatter (no opening ---)", ""
-
-    end = content.find("---", 3)
-    if end == -1:
-        return None, "Unclosed frontmatter (no closing ---)", ""
-
-    yaml_str = content[3:end]
-    body = content[end + 3:]  # Everything after closing ---
-
-    try:
-        data = yaml.safe_load(yaml_str)
-        if not isinstance(data, dict):
-            return None, f"Frontmatter is not a mapping (got {type(data).__name__})", body
-        return data, None, body
-    except yaml.YAMLError as e:
-        return None, f"YAML parse error: {e}", body
 
 
 def serialize_frontmatter(data: dict) -> str:
@@ -165,7 +135,9 @@ def verify_roundtrip(original_data: dict, new_content: str) -> tuple[bool, str |
         - is_valid: True if round-trip produces identical data
         - error_message: Description of mismatch, or None if valid
     """
-    new_data, error, _ = parse_frontmatter(new_content)
+    new_parsed = ParsedFile.from_content(new_content)
+    new_data = new_parsed.frontmatter
+    error = new_parsed.error
     if error:
         return False, f"Failed to parse converted content: {error}"
 
@@ -216,9 +188,11 @@ def convert_file(filepath: str, dry_run: bool = False) -> tuple[str, str | None]
     line_ending = detect_line_ending(content)
 
     # Parse frontmatter
-    data, error, body = parse_frontmatter(content)
-    if error:
-        return "skipped", error
+    parsed = ParsedFile.from_content(content)
+    if parsed.error:
+        return "skipped", parsed.error
+    data = parsed.frontmatter
+    body = parsed.body
 
     # Serialize with yaml.dump()
     new_yaml = serialize_frontmatter(data)
@@ -284,9 +258,11 @@ def migrate_source_field(filepath: str, dry_run: bool = False) -> tuple[str, str
     with open(filepath, newline="") as f:
         content = f.read()
 
-    data, error, body = parse_frontmatter(content)
-    if error:
-        return "skipped", error
+    parsed = ParsedFile.from_content(content)
+    if parsed.error:
+        return "skipped", parsed.error
+    data = parsed.frontmatter
+    body = parsed.body
 
     source = data.get("source")
     if source is None:
@@ -323,9 +299,11 @@ def migrate_source_field(filepath: str, dry_run: bool = False) -> tuple[str, str
     source_removed = False
     with open(filepath, newline="") as f:
         content = f.read()
-    data, error, body = parse_frontmatter(content)
-    if error:
-        return "failed", f"Failed to re-parse after link addition: {error}"
+    parsed = ParsedFile.from_content(content)
+    if parsed.error:
+        return "failed", f"Failed to re-parse after link addition: {parsed.error}"
+    data = parsed.frontmatter
+    body = parsed.body
 
     if "source" in data:
         del data["source"]

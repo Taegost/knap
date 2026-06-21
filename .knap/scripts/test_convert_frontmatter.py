@@ -22,12 +22,12 @@ import yaml
 from convert_frontmatter import (
     discover_md_files,
     detect_line_ending,
-    parse_frontmatter,
     serialize_frontmatter,
     verify_roundtrip,
     verify_body_preservation,
     convert_file,
 )
+from parse_frontmatter import ParsedFile
 
 
 # --- Fixtures ---
@@ -158,51 +158,50 @@ Body content.
 
 class TestParseFrontmatter:
     def test_parses_yaml_frontmatter(self):
-        data, error, body = parse_frontmatter(SAMPLE_FRONTMATTER)
-        assert error is None
-        assert data["title"] == "Test Title"
-        assert data["source_url"] == "https://example.com"
-        assert data["date_farmed"] == date_type(2026, 6, 17)
-        assert data["category"] == "transcript"
-        assert data["tags"] == ["tag1", "tag2"]
-        assert "# Content" in body
+        parsed = ParsedFile.from_content(SAMPLE_FRONTMATTER)
+        assert parsed.error is None
+        assert parsed.frontmatter["title"] == "Test Title"
+        assert parsed.frontmatter["source_url"] == "https://example.com"
+        assert parsed.frontmatter["date_farmed"] == date_type(2026, 6, 17)
+        assert parsed.frontmatter["category"] == "transcript"
+        assert parsed.frontmatter["tags"] == ["tag1", "tag2"]
+        assert "# Content" in parsed.body
 
     def test_returns_error_without_frontmatter(self):
-        data, error, body = parse_frontmatter(NO_FRONTMATTER)
-        assert data is None
-        assert "Missing frontmatter" in error
-        assert body == ""
+        parsed = ParsedFile.from_content(NO_FRONTMATTER)
+        assert parsed.frontmatter is None
+        assert "Missing frontmatter" in parsed.error
 
     def test_returns_error_unclosed_frontmatter(self):
-        data, error, body = parse_frontmatter(MALFORMED_FRONTMATTER)
-        assert data is None
-        assert "Unclosed frontmatter" in error
+        parsed = ParsedFile.from_content(MALFORMED_FRONTMATTER)
+        assert parsed.frontmatter is None
+        assert "Unclosed frontmatter" in parsed.error
 
     def test_handles_empty_list(self):
-        data, error, body = parse_frontmatter(EMPTY_LIST_FRONTMATTER)
-        assert error is None
-        assert data["tags"] == []
+        parsed = ParsedFile.from_content(EMPTY_LIST_FRONTMATTER)
+        assert parsed.error is None
+        assert parsed.frontmatter["tags"] == []
 
     def test_handles_date_values(self):
-        data, error, body = parse_frontmatter(DATE_FRONTMATTER)
-        assert error is None
-        assert data["date_farmed"] == date_type(2026, 6, 17)
+        parsed = ParsedFile.from_content(DATE_FRONTMATTER)
+        assert parsed.error is None
+        assert parsed.frontmatter["date_farmed"] == date_type(2026, 6, 17)
 
     def test_handles_na_values(self):
-        data, error, body = parse_frontmatter(NA_VALUE_FRONTMATTER)
-        assert error is None
-        assert data["source_url"] == "n/a"
+        parsed = ParsedFile.from_content(NA_VALUE_FRONTMATTER)
+        assert parsed.error is None
+        assert parsed.frontmatter["source_url"] == "n/a"
 
     def test_handles_markdown_links(self):
-        data, error, body = parse_frontmatter(MARKDOWN_LINK_FRONTMATTER)
-        assert error is None
-        assert "[file.md]" in data["source"]
+        parsed = ParsedFile.from_content(MARKDOWN_LINK_FRONTMATTER)
+        assert parsed.error is None
+        assert "[file.md]" in parsed.frontmatter["source"]
 
     def test_handles_dict_lists(self):
-        data, error, body = parse_frontmatter(DICT_LIST_FRONTMATTER)
-        assert error is None
-        assert len(data["links"]) == 2
-        assert data["links"][0]["type"] == "transcript"
+        parsed = ParsedFile.from_content(DICT_LIST_FRONTMATTER)
+        assert parsed.error is None
+        assert len(parsed.frontmatter["links"]) == 2
+        assert parsed.frontmatter["links"][0]["type"] == "transcript"
 
 
 # --- Serialization tests ---
@@ -333,7 +332,9 @@ class TestConvertFile:
 
         # Verify the file was actually converted
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert data["title"] == "Test Title"
 
@@ -368,7 +369,9 @@ class TestConvertFile:
         assert status in ("converted", "unchanged")
 
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert data["tags"] == []
 
@@ -380,7 +383,9 @@ class TestConvertFile:
         assert status in ("converted", "unchanged")
 
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert data["date_farmed"] == date_type(2026, 6, 17)
 
@@ -392,7 +397,9 @@ class TestConvertFile:
         assert status in ("converted", "unchanged")
 
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert data["source_url"] == "n/a"
 
@@ -404,7 +411,9 @@ class TestConvertFile:
         assert status in ("converted", "unchanged")
 
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert "[file.md]" in data["source"]
 
@@ -416,7 +425,9 @@ class TestConvertFile:
         assert status in ("converted", "unchanged")
 
         content = filepath.read_text()
-        data, error, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        data = parsed.frontmatter
+        error = parsed.error
         assert error is None
         assert len(data["links"]) == 2
         assert data["links"][0]["type"] == "transcript"
@@ -450,7 +461,8 @@ class TestConvertFile:
         # Parse original
         with open(filepath) as f:
             content = f.read()
-        original_data, _, _ = parse_frontmatter(content)
+        parsed = ParsedFile.from_content(content)
+        original_data = parsed.frontmatter
 
         # Convert
         status, detail = convert_file(str(filepath))
@@ -459,7 +471,8 @@ class TestConvertFile:
         # Parse converted
         with open(filepath) as f:
             new_content = f.read()
-        new_data, _, _ = parse_frontmatter(new_content)
+        parsed = ParsedFile.from_content(new_content)
+        new_data = parsed.frontmatter
 
         assert original_data == new_data
 
