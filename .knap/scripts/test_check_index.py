@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-from check_index import check_index
+from check_index import check_index, fix_missing_parent_links
 
 
 def _setup_repo(tmp_path):
@@ -22,6 +22,19 @@ def _setup_repo(tmp_path):
     }
     (schema_dir / "folders.yaml").write_text(yaml.dump(config))
     (templates_dir / "folders.yaml.template").write_text(yaml.dump(config))
+    # Create categories.yaml template for schema.py
+    categories = {
+        "required_fields": ["title", "source_url", "date_farmed", "category"],
+        "optional_fields": ["website", "address", "phone", "hours", "email"],
+        "categories": {
+            "transcript": {
+                "required_fields": ["channel"],
+                "analysis_label": "Notes",
+                "analysis_todo": "<!-- TODO -->",
+            }
+        },
+    }
+    (templates_dir / "categories.yaml.template").write_text(yaml.dump(categories))
 
 
 def _make_wiki_file(path: Path, title: str = "Test", links: list | None = None):
@@ -151,3 +164,76 @@ class TestCheckIndex:
         issues = check_index()
         parent_issues = [i for i in issues if "Parent" in i and "index.md" in i]
         assert parent_issues == []
+
+
+class TestFixMissingParentLinks:
+    def test_fixes_missing_parent_link(self, tmp_path, monkeypatch):
+        """Auto-fix adds Parent link to page missing it."""
+        monkeypatch.chdir(tmp_path)
+        _setup_repo(tmp_path)
+        wiki = tmp_path / "wiki"
+        cat_dir = wiki / "transcripts"
+        cat_dir.mkdir(parents=True)
+        (wiki / "index.md").write_text("# Wiki\n- [Transcripts](transcripts/index.md)\n")
+        _make_wiki_file(cat_dir / "index.md", "Index")
+        _make_wiki_file(cat_dir / "page.md", "Page")  # No Parent link
+
+        fixes = fix_missing_parent_links()
+
+        assert len(fixes) == 1
+        assert "fixed" in fixes[0]
+        # Verify the link was added
+        import yaml
+        data = yaml.safe_load((cat_dir / "page.md").read_text().split("---")[1])
+        assert any(l["type"] == "Parent" for l in data.get("links", []))
+
+    def test_fixes_multiple_missing_parent_links(self, tmp_path, monkeypatch):
+        """Auto-fix adds Parent links to multiple pages."""
+        monkeypatch.chdir(tmp_path)
+        _setup_repo(tmp_path)
+        wiki = tmp_path / "wiki"
+        cat_dir = wiki / "transcripts"
+        cat_dir.mkdir(parents=True)
+        (wiki / "index.md").write_text("# Wiki\n- [Transcripts](transcripts/index.md)\n")
+        _make_wiki_file(cat_dir / "index.md", "Index")
+        _make_wiki_file(cat_dir / "page1.md", "Page 1")
+        _make_wiki_file(cat_dir / "page2.md", "Page 2")
+
+        fixes = fix_missing_parent_links()
+
+        assert len(fixes) == 2
+
+    def test_no_fixes_when_all_have_parent(self, tmp_path, monkeypatch):
+        """No fixes when all pages already have Parent links."""
+        monkeypatch.chdir(tmp_path)
+        _setup_repo(tmp_path)
+        wiki = tmp_path / "wiki"
+        cat_dir = wiki / "transcripts"
+        cat_dir.mkdir(parents=True)
+        (wiki / "index.md").write_text("# Wiki\n- [Transcripts](transcripts/index.md)\n")
+        _make_wiki_file(cat_dir / "index.md", "Index")
+        _make_wiki_file(
+            cat_dir / "page.md", "Page",
+            links=[{"target": "[Index](wiki/transcripts/index.md)", "type": "Parent"}],
+        )
+
+        fixes = fix_missing_parent_links()
+
+        assert fixes == []
+
+    def test_fix_adds_page_to_index_body(self, tmp_path, monkeypatch):
+        """Auto-fix also adds page to index body (via index reciprocity)."""
+        monkeypatch.chdir(tmp_path)
+        _setup_repo(tmp_path)
+        wiki = tmp_path / "wiki"
+        cat_dir = wiki / "transcripts"
+        cat_dir.mkdir(parents=True)
+        (wiki / "index.md").write_text("# Wiki\n- [Transcripts](transcripts/index.md)\n")
+        _make_wiki_file(cat_dir / "index.md", "Index")
+        _make_wiki_file(cat_dir / "page.md", "Page")
+
+        fix_missing_parent_links()
+
+        # Verify page appears in index body
+        body = (cat_dir / "index.md").read_text()
+        assert "- [Page](page.md)" in body
